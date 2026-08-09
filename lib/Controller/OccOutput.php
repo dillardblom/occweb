@@ -35,7 +35,7 @@ class OccOutput extends BufferedOutput implements ConsoleOutputInterface
     );
   }
 
-  public function fetch()
+  public function fetch(): string
   {
     // Получаем основной буфер
     $content = parent::fetch();
