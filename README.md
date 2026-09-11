@@ -1,15 +1,24 @@
-# ⚠️ Deprecated ⚠️ OCCWeb terminal
-
-*Читать на [русском](README.ru.md).*
+# OCCWeb terminal (maintained fork)
 
 ### A web terminal for admins to launch Nextcloud's occ commands
 
 ![occweb](https://github.com/Adphi/OCCWeb/raw/main/appinfo/screenshot.png)
 
+## About this fork
 
-## ⚠️ Deprecated ⚠️
-As nextcloudd has no native support for asynchronous operations, due to the use of php, this aplication is deprecated, and will no longer support the Nextcloud' future versions (19+). I did not find a way to implemement true support for interactive and long running occ tasks in a web terminal whitout introducing addtional dependencies (through websockets, for example), the lack of true asynchronous occ operations can lead to serious alterations of voluminous instances. 
-[This issue](https://github.com/nextcloud/server/issues/16726) may give some hints on why I decided to not support this application anymore.
+The original [Adphi/occweb](https://github.com/Adphi/occweb) was marked deprecated by its
+author and is unmaintained. This fork keeps it working on current Nextcloud versions and has
+added SQL query mode, security hardening (admin checks, CSRF/confirmation flows, transactional
+batches), and PHP 8.1+ compatibility fixes on top.
+
+**This tool is still not the right place for big/risky operations.** It has no support for
+asynchronous or long-running tasks — every command runs synchronously inside a single PHP
+web request, so anything that takes a while (`occ files:scan` on a large instance, a Nextcloud
+major-version `occ upgrade`, `occ maintenance:mode --on` workflows) can time out mid-operation
+with no way to recover cleanly. Use a real shell (SSH + `occ` directly, or the guest-agent/
+console) for major upgrades and other long-running or high-blast-radius operations; reserve
+this terminal for routine day-to-day occ/SQL admin tasks. [This issue](https://github.com/nextcloud/server/issues/16726)
+has background on why Nextcloud has no native async support for occ tasks.
 
 
 ## Install
@@ -110,4 +119,4 @@ This does not apply on a fresh `occ app:enable` install — that command sets
 `installed_version` correctly on its own.
 
 ## TODOs:
-See [open issues](https://github.com/Adphi/occweb/issues)
+See [open issues](https://github.com/dillardblom/occweb/issues)
