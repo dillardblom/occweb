@@ -7,9 +7,19 @@
 ## About this fork
 
 The original [Adphi/occweb](https://github.com/Adphi/occweb) was marked deprecated by its
-author and is unmaintained. This fork keeps it working on current Nextcloud versions and has
-added SQL query mode, security hardening (admin checks, CSRF/confirmation flows, transactional
-batches), and PHP 8.1+ compatibility fixes on top.
+author and is unmaintained. This fork tracks [fanategorius/occweb](https://github.com/fanategorius/occweb),
+which picked up compatibility maintenance where Adphi left off, and adds SQL query mode,
+security hardening (admin checks, CSRF/confirmation flows, transactional batches), and PHP
+8.1+ compatibility fixes on top.
+
+### Credits
+
+- [Adphi/occweb](https://github.com/Adphi/occweb) — original author/project.
+- [fanategorius/occweb](https://github.com/fanategorius/occweb) — the actively maintained
+  fork this repo is based on and tracks.
+- [Git-Usr123/occweb](https://github.com/Git-Usr123/occweb) — independent fork; the
+  `OC::$server->getConfig()` → `OC::$server->get(\OCP\IConfig::class)` fix in
+  `OccController.php` was spotted there and backported here.
 
 **This tool is still not the right place for big/risky operations.** It has no support for
 asynchronous or long-running tasks — every command runs synchronously inside a single PHP
