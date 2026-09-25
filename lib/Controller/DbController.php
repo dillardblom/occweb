@@ -160,9 +160,6 @@ class DbController extends Controller
         return null;
     }
 
-    /**
-     * @NoCSRFRequired
-     */
     public function query()
     {
         // Check admin privileges
