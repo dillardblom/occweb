@@ -13,28 +13,28 @@ use Psr\Log\LoggerInterface;
 
 class DbController extends Controller
 {
-    /** Максимум строк, возвращаемых на один SELECT (защита от OOM/DoS). */
+    /** Maximum rows returned per SELECT (protection against OOM/DoS). */
     private const MAX_ROWS = 1000;
 
-    /** Максимальный размер присланного SQL-текста в байтах (защита от OOM/DoS). */
+    /** Maximum size of submitted SQL text in bytes (protection against OOM/DoS). */
     private const MAX_SQL_BYTES = 1048576; // 1 MB
 
     /**
-     * Конструкции, дающие доступ к файловой системе сервера или запуску
-     * внешних программ через SQL. Блокируются полностью, без возможности
-     * подтверждения — в отличие от DELETE, это не про потерю данных,
-     * а про потенциальный захват сервера.
+     * Constructs that give access to the server's filesystem or allow
+     * launching external programs via SQL. These are blocked entirely,
+     * with no way to confirm past them — unlike DELETE, this isn't
+     * about data loss, it's about potential server takeover.
      */
     private const FORBIDDEN_PATTERNS = [
-        '/\bCOPY\b[\s\S]*\bPROGRAM\b/i' => 'COPY ... PROGRAM (запуск внешних команд)',
-        '/\bCOPY\b[\s\S]*\b(FROM|TO)\b\s*\'/i' => "COPY ... FROM/TO 'file' (доступ к файловой системе сервера)",
+        '/\bCOPY\b[\s\S]*\bPROGRAM\b/i' => 'COPY ... PROGRAM (runs external commands)',
+        '/\bCOPY\b[\s\S]*\b(FROM|TO)\b\s*\'/i' => "COPY ... FROM/TO 'file' (access to the server's filesystem)",
         '/\bpg_read_binary_file\s*\(/i' => 'pg_read_binary_file()',
         '/\bpg_read_file\s*\(/i' => 'pg_read_file()',
         '/\bpg_ls_dir\s*\(/i' => 'pg_ls_dir()',
         '/\bpg_stat_file\s*\(/i' => 'pg_stat_file()',
         '/\blo_import\s*\(/i' => 'lo_import()',
         '/\blo_export\s*\(/i' => 'lo_export()',
-        '/\bdblink(_connect)?\s*\(/i' => 'dblink() (подключение к произвольным БД)',
+        '/\bdblink(_connect)?\s*\(/i' => 'dblink() (connects to arbitrary databases)',
         '/\bLOAD_FILE\s*\(/i' => 'LOAD_FILE()',
         '/\bINTO\s+(OUTFILE|DUMPFILE)\b/i' => 'INTO OUTFILE/DUMPFILE',
     ];
@@ -55,15 +55,15 @@ class DbController extends Controller
         $this->db = $db;
         $this->groupManager = $groupManager;
         $this->userSession = $userSession;
-        // Через OC::$server, как и в OccController — не добавляем LoggerInterface
-        // в конструктор, чтобы не менять сигнатуру, резолвящуюся DI-контейнером.
+        // Via OC::$server, same as in OccController — we don't add LoggerInterface
+        // to the constructor so as not to change the signature resolved by the DI container.
         $this->logger = OC::$server->get(LoggerInterface::class);
     }
 
     /**
-     * Убирает ведущие однострочные комментарии ("-- ...") перед запросом.
-     * После разбиения пачки такой комментарий может "приклеиться"
-     * к следующему запросу и помешать определить его тип (SELECT/SET/DELETE).
+     * Strips leading single-line comments ("-- ...") before a query.
+     * After splitting a batch, such a comment can end up stuck to the
+     * next query and interfere with detecting its type (SELECT/SET/DELETE).
      */
     private function stripLeadingComments($query)
     {
@@ -75,12 +75,12 @@ class DbController extends Controller
     }
 
     /**
-     * Убирает ВСЕ однострочные (-- ...) и блочные C-style комментарии
-     * из запроса, включая те, что стоят внутри выражения (например, между
-     * именем функции и открывающей скобкой — иначе так можно спрятать
-     * запрещённую конструкцию от findForbiddenConstruct). Используется
-     * только для проверки на запрещённые конструкции — сам запрос на
-     * выполнение идёт без изменений.
+     * Strips ALL single-line (-- ...) and block-style C comments from a
+     * query, including ones sitting inside an expression (e.g. between a
+     * function name and its opening parenthesis — otherwise a forbidden
+     * construct could be hidden from findForbiddenConstruct that way).
+     * Used only for checking against forbidden constructs — the query
+     * that actually gets executed is left unmodified.
      */
     private function removeAllComments($query)
     {
@@ -90,10 +90,10 @@ class DbController extends Controller
     }
 
     /**
-     * Разбивает пачку запросов по ";" с учётом одинарных и двойных
-     * кавычек (строки и экранированные идентификаторы Postgres), чтобы
-     * точка с запятой внутри 'строки' или "идентификатора" (в том числе
-     * с '' / "" как экранированной кавычкой) не ломала разбиение.
+     * Splits a batch of queries on ";" while respecting single and double
+     * quotes (strings and Postgres-escaped identifiers), so that a
+     * semicolon inside a 'string' or "identifier" (including '' / "" as
+     * an escaped quote) doesn't break up the split.
      */
     private function splitStatements($sql)
     {
@@ -143,10 +143,11 @@ class DbController extends Controller
     }
 
     /**
-     * Возвращает описание найденной запрещённой конструкции (доступ к ФС,
-     * запуск программ) или null, если запрос безопасен в этом плане.
-     * Проверяется версия запроса без комментариев — иначе конструкцию
-     * можно спрятать, вставив комментарий между именем функции и "(".
+     * Returns a description of the forbidden construct found (filesystem
+     * access, running programs), or null if the query is safe in that
+     * regard. The comment-stripped version of the query is checked —
+     * otherwise the construct could be hidden by inserting a comment
+     * between the function name and "(".
      */
     private function findForbiddenConstruct($query)
     {
@@ -164,7 +165,7 @@ class DbController extends Controller
      */
     public function query()
     {
-        // Проверка прав администратора
+        // Check admin privileges
         $user = $this->userSession->getUser();
         if (!$user) {
             return new JSONResponse(['error' => 'Not authenticated'], 401);
@@ -188,25 +189,24 @@ class DbController extends Controller
             ], 413);
         }
 
-        // Аудит: логируем сам факт попытки выполнения ДО всех проверок,
-        // чтобы в логе остались и заблокированные/отклонённые запросы,
-        // а не только успешно выполненные.
+        // Audit: log the fact that execution was attempted BEFORE any checks,
+        // so blocked/rejected queries are recorded in the log too, not just
+        // the ones that succeeded.
         $this->logger->warning('[occweb] SQL submitted by {user}: {sql}', [
             'app' => 'occweb',
             'user' => $user->getUID(),
             'sql' => $sql,
         ]);
 
-        // Разбиваем пачку по ";" с учётом кавычек (см. splitStatements).
-        // Все запросы выполняются последовательно на одном и том же
-        // соединении с БД (в рамках одного HTTP-запроса), поэтому SET
-        // сохраняет своё значение для current_setting() в следующих
-        // запросах этой же пачки.
+        // Split the batch on ";" respecting quotes (see splitStatements).
+        // All queries run sequentially on the same DB connection (within a
+        // single HTTP request), so SET retains its value for
+        // current_setting() in the following queries of the same batch.
         $queries = $this->splitStatements($sql);
 
-        // Доступ к файловой системе сервера / запуск программ через SQL
-        // блокируется полностью — это не про потерю данных (как DELETE),
-        // а про потенциальный захват сервера, подтверждением не обходится.
+        // Access to the server's filesystem / running programs via SQL is
+        // blocked entirely — this isn't about data loss (like DELETE), it's
+        // about potential server takeover, and confirmation doesn't bypass it.
         foreach ($queries as $query) {
             $forbidden = $this->findForbiddenConstruct($query);
             if ($forbidden !== null) {
@@ -223,9 +223,9 @@ class DbController extends Controller
             }
         }
 
-        // DELETE и UPDATE необратимы (или трудно обратимы), поэтому
-        // требуем явное подтверждение с клиента (confirm=true), прежде
-        // чем выполнять хоть один запрос из пачки.
+        // DELETE and UPDATE are irreversible (or hard to reverse), so we
+        // require explicit confirmation from the client (confirm=true) before
+        // executing a single query from the batch.
         $deleteCount = 0;
         $updateCount = 0;
         foreach ($queries as $query) {
@@ -254,21 +254,23 @@ class DbController extends Controller
             ]);
         }
 
-        // Пачка выполняется в одной транзакции: если один из запросов
-        // упадёт (например, DELETE на середине серии из-за FK), все уже
-        // выполненные в этой же пачке изменения откатываются, а не
-        // остаются частично применёнными. SET (без LOCAL) не транзакционен
-        // в PostgreSQL, поэтому откат не затрагивает current_setting().
+        // The batch runs inside a single transaction: if one of the queries
+        // fails (e.g. a DELETE partway through a series due to an FK), all
+        // changes already made within this same batch are rolled back instead
+        // of staying partially applied. SET (without LOCAL) isn't
+        // transactional in PostgreSQL, so the rollback doesn't affect
+        // current_setting().
         //
-        // Про DDL: в PostgreSQL (наша БД) DDL — CREATE/ALTER/DROP TABLE и
-        // т.п. — полностью транзакционен и откатывается вместе с остальными
-        // изменениями пачки, поэтому здесь для Postgres проблемы нет. Но
-        // Nextcloud работает и с MySQL/MariaDB через тот же IDBConnection, а
-        // там DDL делает неявный COMMIT — если эта пачка выполнится на
-        // MySQL-инстансе, commit()/rollBack() после такого DDL получат
-        // исключение "no active transaction". Оборачиваем begin/commit/
-        // rollBack в try/catch, чтобы это не превращалось в необработанное
-        // исключение и HTTP 500 вместо аккуратного JSON-ответа.
+        // About DDL: in PostgreSQL (our database) DDL — CREATE/ALTER/DROP
+        // TABLE etc. — is fully transactional and rolls back together with
+        // the rest of the batch's changes, so there's no problem here for
+        // Postgres. But Nextcloud also works with MySQL/MariaDB through the
+        // same IDBConnection, and there DDL causes an implicit COMMIT — if
+        // this batch runs on a MySQL instance, commit()/rollBack() after such
+        // a DDL statement will get a "no active transaction" exception. We
+        // wrap begin/commit/rollBack in try/catch so this doesn't turn into
+        // an unhandled exception and an HTTP 500 instead of a clean JSON
+        // response.
         $results = [];
         $rolledBack = false;
         $rollbackFailed = false;
@@ -296,9 +298,10 @@ class DbController extends Controller
                 $stmt->execute();
 
                 if ($isSelect) {
-                    // Читаем построчно и останавливаемся на MAX_ROWS, а не
-                    // fetchAll() + array_slice — иначе SELECT без LIMIT на
-                    // огромной таблице всё равно утащит всё в память PHP.
+                    // Read row by row and stop at MAX_ROWS, instead of
+                    // fetchAll() + array_slice — otherwise a SELECT without
+                    // LIMIT on a huge table would still pull everything into
+                    // PHP memory.
                     $rows = [];
                     $truncated = false;
                     while (($row = $stmt->fetch()) !== false) {
@@ -338,19 +341,20 @@ class DbController extends Controller
                     'type' => 'error',
                     'error' => $e->getMessage()
                 ];
-                // Откатываем всю пачку и останавливаемся: не продолжаем
-                // выполнять оставшиеся запросы (например, серию DELETE),
-                // если один из предыдущих шагов не выполнился.
+                // Roll back the whole batch and stop: don't keep executing
+                // the remaining queries (e.g. a series of DELETEs) if one of
+                // the preceding steps failed.
                 if ($transactionStarted) {
                     try {
                         $this->db->rollBack();
                         $rolledBack = true;
                     } catch (\Exception $rollbackError) {
-                        // Транзакция уже закрыта не нами — например, неявным
-                        // COMMIT-ом от DDL-запроса на MySQL/MariaDB. Всё, что
-                        // выполнилось ДО этой точки в пачке, могло остаться
-                        // применённым навсегда — намеренно НЕ ставим
-                        // rolledBack в true, это было бы неправдой.
+                        // The transaction was already closed by something
+                        // other than us — e.g. an implicit COMMIT from a DDL
+                        // statement on MySQL/MariaDB. Anything that executed
+                        // BEFORE this point in the batch may remain
+                        // permanently applied — we deliberately do NOT set
+                        // rolledBack to true, since that would be untrue.
                         $rollbackFailed = true;
                         $this->logger->warning('[occweb] rollBack() failed after an error — earlier statements in this batch may already be permanently applied: {error}', [
                             'app' => 'occweb',
@@ -366,9 +370,10 @@ class DbController extends Controller
             try {
                 $this->db->commit();
             } catch (\Exception $e) {
-                // Транзакция уже закоммичена неявно (например, DDL-запросом
-                // на MySQL/MariaDB) — эффекты уже сохранены, это не ошибка
-                // выполнения самой пачки.
+                // The transaction was already committed implicitly (e.g. by
+                // a DDL statement on MySQL/MariaDB) — the effects are
+                // already saved, this isn't an error in executing the batch
+                // itself.
                 $this->logger->info('[occweb] commit() had nothing to commit (likely auto-committed by a DDL statement): {error}', [
                     'app' => 'occweb',
                     'error' => $e->getMessage(),

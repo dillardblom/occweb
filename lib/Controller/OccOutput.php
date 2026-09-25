@@ -37,17 +37,17 @@ class OccOutput extends BufferedOutput implements ConsoleOutputInterface
 
   public function fetch(): string
   {
-    // Получаем основной буфер
+    // Get the main buffer
     $content = parent::fetch();
-    
-    // Если есть stream от секций, читаем его тоже
+
+    // If there's a stream from sections, read that too
     if ($this->stream !== null) {
       rewind($this->stream);
       $streamContent = stream_get_contents($this->stream);
       if ($streamContent !== false) {
         $content .= $streamContent;
       }
-      // Очищаем stream для следующего вызова
+      // Clear the stream for the next call
       ftruncate($this->stream, 0);
       rewind($this->stream);
     }

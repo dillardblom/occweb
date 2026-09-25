@@ -7,17 +7,17 @@
     }
     var baseUrl = OC.generateUrl('/apps/occweb');
 
-    // Текущий режим терминала: 'occ' (обычные occ-команды) или 'sql'
-    // (выполнение произвольных SQL-запросов через /db/query).
+    // Current terminal mode: 'occ' (regular occ commands) or 'sql'
+    // (running arbitrary SQL queries via /db/query).
     var mode = 'occ';
 
     var OCC_PROMPT = 'occ $ ';
     var SQL_PROMPT = '[[;#ff5555;]sql]# ';
 
-    // Разбивает пачку запросов по ";" с учётом одинарных И двойных кавычек
-    // (в т.ч. '' / "" как экранированной кавычки внутри строки/идентификатора),
-    // чтобы ";" в строковом литерале или "квотированном идентификаторе" не
-    // ломал разбиение. Зеркалит splitStatements() на бэкенде.
+    // Splits a batch of queries on ";" while respecting single AND double
+    // quotes (incl. '' / "" as an escaped quote inside a string/identifier),
+    // so that a ";" inside a string literal or "quoted identifier" doesn't
+    // break the split. Mirrors splitStatements() on the backend.
     function splitStatements(sql) {
       var statements = [];
       var current = '';
@@ -54,9 +54,9 @@
       return statements.filter(function (s) { return s !== ''; });
     }
 
-    // Быстрая клиентская проверка на DELETE/UPDATE — только для UX (чтобы не
-    // делать лишний запрос к серверу). Итоговое решение всё равно
-    // принимает бэкенд (requiresConfirmation), это лишь подсказка.
+    // Quick client-side check for DELETE/UPDATE — purely for UX (to avoid
+    // an extra round trip to the server). The backend always makes the
+    // final call (requiresConfirmation); this is just a hint.
     function scriptNeedsConfirmation(sql) {
       return splitStatements(sql).some(function (part) {
         var normalized = part.replace(/^(\s*--[^\n]*\n)*\s*/, '');
@@ -68,18 +68,18 @@
       return String(value).replace(/'/g, "''");
     }
 
-    // Готовые шаблоны SQL-скриптов. build() возвращает текст скрипта,
-    // который вставляется в командную строку через term.set_command() —
-    // ничего не выполняется автоматически, пользователь сам проверяет
-    // и жмёт Enter (после чего срабатывает обычное подтверждение DELETE).
+    // Ready-made SQL script templates. build() returns the script text,
+    // which is inserted into the command line via term.set_command() —
+    // nothing runs automatically, the user reviews it themselves and
+    // presses Enter (which then triggers the normal DELETE confirmation).
     var TEMPLATES = {
       'delete-user': {
         args: ['uid'],
-        description: 'Полностью удалить локального пользователя (oc_preferences, oc_group_user, oc_ldap_user_mapping, oc_users)',
+        description: 'Completely delete a local user (oc_preferences, oc_group_user, oc_ldap_user_mapping, oc_users)',
         build: function (uid) {
-          // Значение подставляется напрямую в каждый запрос (а не через
-          // SET+current_setting) — так скрипт остаётся рабочим, даже если
-          // пользователь скопирует/выполнит только часть строк по отдельности.
+          // The value is substituted directly into each query (rather than
+          // via SET+current_setting) — this keeps the script working even
+          // if the user copies/runs only some of the lines individually.
           var v = escapeSqlString(uid);
           return [
             "SELECT * FROM oc_users WHERE uid = '" + v + "'",
@@ -93,7 +93,7 @@
       },
       'list-user': {
         args: ['uid'],
-        description: 'Только посмотреть данные пользователя, без удаления (oc_users, oc_preferences, oc_group_user, oc_ldap_user_mapping)',
+        description: "View a user's data only, without deleting anything (oc_users, oc_preferences, oc_group_user, oc_ldap_user_mapping)",
         build: function (uid) {
           var v = escapeSqlString(uid);
           return [
@@ -106,14 +106,15 @@
       },
       'rename-user': {
         args: ['old_uid', 'new_uid'],
-        description: 'ВНИМАНИЕ: не официальная операция Nextcloud. Переименовывает uid только в основных таблицах ядра — покрывает не всё, требует ручных доп. шагов (см. предупреждение в самом скрипте)',
+        description: "WARNING: not an official Nextcloud operation. Renames the uid only in the core tables — doesn't cover everything, requires manual extra steps (see the warning in the script itself)",
         build: function (oldUid, newUid) {
           var o = escapeSqlString(oldUid);
           var n = escapeSqlString(newUid);
-          // Предупреждение — только однострочные "--"-комментарии без ";" внутри,
-          // поэтому splitStatements() (парный на бэкенде и здесь) не разобьёт их
-          // как отдельные запросы, а stripLeadingComments() на бэкенде уберёт
-          // этот блок перед определением типа самого первого запроса (SELECT).
+          // The warning consists only of single-line "--" comments with no
+          // ";" inside them, so splitStatements() (mirrored on the backend
+          // and here) won't split them into separate statements, and
+          // stripLeadingComments() on the backend will strip this block
+          // before determining the type of the very first query (SELECT).
           var warning =
             "-- WARNING rename is NOT an officially supported Nextcloud operation\n" +
             "-- This only updates core tables below - it does NOT cover app-specific\n" +
@@ -169,7 +170,7 @@
       term.echo('[[;yellow;]Template inserted into the command line — review it, then press Enter to run.]');
     }
 
-    // Табличный вывод результатов SELECT в стиле psql.
+    // Tabular rendering of SELECT results, psql-style.
     function renderTable(term, rows) {
       if (!rows || !rows.length) {
         return;
@@ -178,8 +179,9 @@
 
       function formatCell(v) {
         if (v === null || v === undefined) {
-          // Явная метка, а не пустая строка — иначе NULL неотличим от
-          // настоящей пустой строки '' в выводе таблицы.
+          // An explicit label rather than an empty string — otherwise NULL
+          // would be indistinguishable from an actual empty string '' in
+          // the table output.
           return '[NULL]';
         }
         if (typeof v === 'object') {
@@ -273,9 +275,9 @@
       term.echo('[[;yellow;]Switched back to OCC mode.]');
     }
 
-    // Таймаут для больших/долгих пачек (например, DELETE по большой таблице
-    // без индекса): без него зависший запрос молча оставит терминал
-    // заблокированным (term.pause()) навсегда, если сервер не ответит.
+    // Timeout for large/long-running batches (e.g. a DELETE on a big table
+    // without an index): without it, a hung query would silently leave the
+    // terminal blocked (term.pause()) forever if the server never responds.
     var SQL_REQUEST_TIMEOUT_MS = 120000;
 
     function sendSqlQuery(term, sql, confirmed) {
@@ -388,8 +390,8 @@
         prompt: OCC_PROMPT,
         completion: response,
         keydown: function (e) {
-          // Shift+Enter вставляет перевод строки вместо выполнения команды,
-          // это позволяет набирать многострочные SQL-скрипты в режиме sql.
+          // Shift+Enter inserts a newline instead of running the command,
+          // letting you type multi-line SQL scripts in sql mode.
           if (e.shiftKey && e.key === 'Enter') {
             this.insert('\n');
             return false;
