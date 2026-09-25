@@ -7,7 +7,7 @@
     <description><![CDATA[Run OCC Commands in a web terminal]]></description>
     <version>0.3.4</version>
     <licence>agpl</licence>
-    <author mail="ebugaev@itkey.com" >Egor</author>
+    <author mail="dillard.blom@ensembia.com" >Egor</author>
     <namespace>OCCWeb</namespace>
     <category>tools</category>
     <website>https://github.com/fanategorius/occweb</website>
