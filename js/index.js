@@ -1,6 +1,13 @@
 (function (OC, window, $, undefined) {
   'use strict';
   $(function() {
+    // Nextcloud core only auto-attaches the CSRF requesttoken header to ajax
+    // calls made through its own globally-loaded jQuery. Since NC34 that
+    // global jQuery is no longer guaranteed to be the one still active by
+    // the time our own calls fire (other apps loading their own jQuery can
+    // replace window.jQuery afterwards - see js/jquery.js), ajaxSetup() here
+    // isn't reliable; every $.ajax() call below sets the header explicitly.
+
     function scrollToBottom(){
       var html = $('html');
       html.scrollTop(html.prop('scrollHeight'));
@@ -287,6 +294,7 @@
         type: 'POST',
         contentType: 'application/json',
         timeout: SQL_REQUEST_TIMEOUT_MS,
+        headers: { requesttoken: OC.requestToken },
         data: JSON.stringify({ sql: sql, confirm: !!confirmed })
       }).done(function (response) {
         if (response && response.requiresConfirmation) {
@@ -319,7 +327,7 @@
       });
     }
 
-    $.get(baseUrl + '/cmd', function(response){
+    $.ajax({ url: baseUrl + '/cmd', headers: { requesttoken: OC.requestToken } }).done(function(response){
       $('#app-content').terminal(function(command, term) {
         if (mode === 'sql') {
           var trimmed = command.trim();
@@ -375,6 +383,7 @@
             url: baseUrl + '/cmd',
             type: 'POST',
             contentType: 'application/json',
+            headers: { requesttoken: OC.requestToken },
             data: JSON.stringify(occCommand)
           }).done(function (response) {
             term.echo('\n' + response).resume();

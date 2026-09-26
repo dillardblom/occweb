@@ -5,7 +5,7 @@
     <name>Extended OCC Web</name>
     <summary>OCC Commands in a web terminal</summary>
     <description><![CDATA[Run OCC Commands in a web terminal]]></description>
-    <version>0.3.4</version>
+    <version>0.3.5</version>
     <licence>agpl</licence>
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
     <namespace>OCCWeb</namespace>
@@ -20,7 +20,7 @@
              or guessed ahead. Test against the next major's beta and bump
              this BEFORE it goes final, so occ:upgrade never has to fall back
              to auto-disabling the app. -->
-        <nextcloud min-version="30" max-version="33"/>
+        <nextcloud min-version="30" max-version="34"/>
     </dependencies>
     <navigations>
         <navigation role="admin">
