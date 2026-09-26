@@ -157,8 +157,18 @@ show-version:
 #   make version RELEASE_REMOTE=fork
 RELEASE_REMOTE ?= origin
 
+# VERSION/app_name are read live from the working tree's appinfo/info.xml,
+# but the archive this tags/packages/signs is git archive HEAD - i.e. the
+# last COMMITTED state. Without this check, bumping <version> without
+# committing first would tag and sign a package named/keyed after the new
+# version while its actual contents are still the previous commit's.
+.PHONY: check-clean-tree
+check-clean-tree:
+	@git diff --quiet HEAD -- || \
+		(echo "Uncommitted changes to tracked files - commit before releasing (see 'git status')." >&2; exit 1)
+
 .PHONY: version
-version:
+version: check-clean-tree
 	@echo "Creating version v$(VERSION)"
 	@git tag v$(VERSION)
 	@git push $(RELEASE_REMOTE) v$(VERSION)
