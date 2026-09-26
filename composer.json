@@ -6,6 +6,10 @@
     "authors": [
         {
             "name": "Adphi"
+        },
+        {
+            "name": "Dillard Blom",
+            "email": "dillard.blom@ensembia.com"
         }
     ],
     "require": {},

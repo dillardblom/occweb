@@ -3,7 +3,7 @@
 # Post-clone install script for occweb.
 #
 # Usage (from nextcloud/apps/):
-#   git clone https://github.com/fanategorius/occweb.git
+#   git clone https://github.com/dillardblom/occweb.git
 #   bash occweb/install.sh [nextcloud-root] [web-user]
 #
 # Defaults: nextcloud-root=/var/www/nextcloud, web-user=www-data

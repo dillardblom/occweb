@@ -2,7 +2,7 @@
 
 ### A web terminal for admins to launch Nextcloud's occ commands
 
-![occweb](https://github.com/Adphi/OCCWeb/raw/main/appinfo/screenshot.png)
+![occweb](https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png)
 
 ## About this fork
 
@@ -41,7 +41,7 @@ target server's `apps/` directory and run the install script:
 
 ```bash
 cd /var/www/nextcloud/apps
-git clone https://github.com/fanategorius/occweb.git
+git clone https://github.com/dillardblom/occweb.git
 bash occweb/install.sh
 ```
 
