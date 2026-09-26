@@ -10,10 +10,10 @@
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
     <namespace>OCCWeb</namespace>
     <category>tools</category>
-    <website>https://github.com/fanategorius/occweb</website>
-    <bugs>https://github.com/fanategorius/occweb/issues</bugs>
-    <repository>https://github.com/fanategorius/occweb</repository>
-    <screenshot>https://github.com/fanategorius/occweb/raw/main/appinfo/screenshot.png</screenshot>
+    <website>https://github.com/dillardblom/occweb</website>
+    <bugs>https://github.com/dillardblom/occweb/issues</bugs>
+    <repository>https://github.com/dillardblom/occweb</repository>
+    <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
     <dependencies>
         <nextcloud min-version="30" max-version="33"/>
     </dependencies>
