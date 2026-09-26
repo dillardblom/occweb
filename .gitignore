@@ -33,5 +33,8 @@ js/*.log
 # Internal deploy notes (hostnames, paths) - never publish these
 notes/
 
+# Local compat-test docker rigs (throwaway, not part of the app release)
+testbak/
+
 # Misc logs
 *.log

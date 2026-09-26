@@ -17,7 +17,12 @@ class OccOutput extends BufferedOutput implements ConsoleOutputInterface
     return $this;
   }
 
-  public function setErrorOutput(OutputInterface $error)
+  // NC35 bundles a Symfony Console version whose ConsoleOutputInterface
+  // declares this method `: void` - PHP 8 fatals ("Declaration must be
+  // compatible") without a matching return type here. Declaring `: void`
+  // is a valid narrowing of the untyped signature older Symfony/NC
+  // versions have, so this stays compatible with NC30-34 too.
+  public function setErrorOutput(OutputInterface $error): void
   {
   }
 

@@ -5,7 +5,7 @@
     <name>Extended OCC Web</name>
     <summary>OCC Commands in a web terminal</summary>
     <description><![CDATA[Run OCC Commands in a web terminal]]></description>
-    <version>0.4.1</version>
+    <version>0.4.2</version>
     <licence>agpl</licence>
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
     <namespace>OCCWeb</namespace>
@@ -15,12 +15,16 @@
     <repository>https://github.com/dillardblom/occweb</repository>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
     <dependencies>
-        <!-- max-version must equal the highest NC core version this fork has
-             actually been verified on - never a value inherited from upstream
-             or guessed ahead. Test against the next major's beta and bump
-             this BEFORE it goes final, so occ:upgrade never has to fall back
-             to auto-disabling the app. -->
-        <nextcloud min-version="30" max-version="34"/>
+        <!-- min-version and max-version must equal the lowest/highest NC core
+             versions this fork has actually been verified on (via testbak/,
+             see its README) - never inherited from upstream or guessed at
+             either end. min-version was 30 pre-testbak, unverified since the
+             app-id rename/jQuery fixes - narrowed to 32 (2026-09-27) once 30/31
+             turned out to never have been re-tested and 32 was confirmed
+             working. Test against the next major's beta and bump max-version
+             BEFORE it goes final, so occ:upgrade never has to fall back to
+             auto-disabling the app. -->
+        <nextcloud min-version="32" max-version="35"/>
     </dependencies>
     <navigations>
         <navigation role="admin">
