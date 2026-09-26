@@ -30,5 +30,8 @@ js/*.log
 .env
 *.local
 
+# Internal deploy notes (hostnames, paths) - never publish these
+notes/
+
 # Misc logs
 *.log
