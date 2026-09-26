@@ -131,5 +131,21 @@ sudo -u www-data php /var/www/nextcloud/occ config:app:set occweb installed_vers
 This does not apply on a fresh `occ app:enable` install — that command sets
 `installed_version` correctly on its own.
 
+## Compatibility matrix
+
+`max-version` in `appinfo/info.xml` only ever reflects the highest version we've actually
+tested (see the policy comment right above it) - this table is the actual history of what
+was verified, so a rollback target is obvious if a newer major causes problems.
+
+| occweb version | Tag | NC version tested | Result |
+|---|---|---|---|
+| 0.3.4 | `v0.3.4` | 33.0.8 | ✅ Verified (nc01, 2026-09-25) |
+| 0.3.4 | `v0.3.4` | 34.0.4 | ❌ Blank terminal - global jQuery gone on NC34 (`jQuery is not defined`), then a 412 "CSRF check failed" on every ajax call once jQuery was vendored. Fixed in 0.3.5. |
+| 0.3.5 | `v0.3.5-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - vendors its own jQuery + sends the CSRF `requesttoken` header explicitly on every ajax call |
+| 0.3.5 | `v0.3.5-nc34` | 33.0.8 | ⚠️ Believed compatible (the 0.3.5 change is additive-only, nothing removed that NC30-33 depended on) but not re-verified - nc01 no longer runs NC33 to test against |
+
+If a future major breaks something, `git checkout v0.3.4` is the last version confirmed
+working on NC33 and older.
+
 ## TODOs:
 See [open issues](https://github.com/dillardblom/occweb/issues)
