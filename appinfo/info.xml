@@ -15,7 +15,7 @@
     <repository>https://github.com/dillardblom/occweb</repository>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
     <dependencies>
-        <nextcloud min-version="30" max-version="33"/>
+        <nextcloud min-version="30" max-version="40"/>
     </dependencies>
     <navigations>
         <navigation role="admin">
