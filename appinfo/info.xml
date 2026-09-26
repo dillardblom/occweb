@@ -24,7 +24,7 @@
     </dependencies>
     <navigations>
         <navigation role="admin">
-            <name>OCCWeb</name>
+            <name>OCC Web</name>
             <route>extended_occweb.occ.index</route>
             <icon>app.svg</icon>
             <type>link</type>
