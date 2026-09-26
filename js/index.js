@@ -12,7 +12,7 @@
       var html = $('html');
       html.scrollTop(html.prop('scrollHeight'));
     }
-    var baseUrl = OC.generateUrl('/apps/occweb');
+    var baseUrl = OC.generateUrl('/apps/extended_occweb');
 
     // Current terminal mode: 'occ' (regular occ commands) or 'sql'
     // (running arbitrary SQL queries via /db/query).

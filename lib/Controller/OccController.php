@@ -70,7 +70,7 @@ class OccController extends Controller
   public function index()
   {
     if ($err = $this->requireAdmin()) return $err;
-    return new TemplateResponse('occweb', 'index');
+    return new TemplateResponse('extended_occweb', 'index');
   }
 
   /**

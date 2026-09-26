@@ -27,14 +27,14 @@ tar -C "$STAGE" -cf /tmp/occweb-deploy.tar .
 # 2. Copy it onto the Docker host, then into the container
 scp /tmp/occweb-deploy.tar <docker-host>:/tmp/occweb-deploy.tar
 ssh <docker-host> "docker cp /tmp/occweb-deploy.tar nextcloud-aio-nextcloud:/tmp/occweb-deploy.tar && \
-  docker exec nextcloud-aio-nextcloud sh -c 'mkdir -p /var/www/html/custom_apps/occweb && \
-  tar -xf /tmp/occweb-deploy.tar -C /var/www/html/custom_apps/occweb && rm /tmp/occweb-deploy.tar'"
+  docker exec nextcloud-aio-nextcloud sh -c 'mkdir -p /var/www/html/custom_apps/extended_occweb && \
+  tar -xf /tmp/occweb-deploy.tar -C /var/www/html/custom_apps/extended_occweb && rm /tmp/occweb-deploy.tar'"
 
 # 3. Fix ownership - tar preserves the source uid/gid, not www-data
-ssh <docker-host> "docker exec nextcloud-aio-nextcloud chown -R www-data:www-data /var/www/html/custom_apps/occweb"
+ssh <docker-host> "docker exec nextcloud-aio-nextcloud chown -R www-data:www-data /var/www/html/custom_apps/extended_occweb"
 
 # 4. Fresh install only (skip when updating an already-enabled app):
-ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ app:enable occweb"
+ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ app:enable extended_occweb"
 ```
 
 > **Gotcha**: never copy a file into a container with `ssh host "docker exec container bash -c 'cat > file'"`
@@ -54,7 +54,7 @@ and Nextcloud puts the whole instance into a "needs upgrade" state until you syn
 manually:
 
 ```bash
-ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ config:app:set occweb installed_version --value='X.Y.Z'"
+ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ config:app:set extended_occweb installed_version --value='X.Y.Z'"
 ```
 
 (use the same `X.Y.Z` as the new `<version>`). Verify with `occ status` that
@@ -77,8 +77,8 @@ default path) — hence the manual PID lookup.
 ## Removing the app
 
 ```bash
-ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ app:disable occweb && \
-  docker exec nextcloud-aio-nextcloud rm -rf /var/www/html/custom_apps/occweb"
+ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ app:disable extended_occweb && \
+  docker exec nextcloud-aio-nextcloud rm -rf /var/www/html/custom_apps/extended_occweb"
 ```
 
 ## `max-version` policy

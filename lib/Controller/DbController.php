@@ -189,8 +189,8 @@ class DbController extends Controller
         // Audit: log the fact that execution was attempted BEFORE any checks,
         // so blocked/rejected queries are recorded in the log too, not just
         // the ones that succeeded.
-        $this->logger->warning('[occweb] SQL submitted by {user}: {sql}', [
-            'app' => 'occweb',
+        $this->logger->warning('[extended_occweb] SQL submitted by {user}: {sql}', [
+            'app' => 'extended_occweb',
             'user' => $user->getUID(),
             'sql' => $sql,
         ]);
@@ -207,8 +207,8 @@ class DbController extends Controller
         foreach ($queries as $query) {
             $forbidden = $this->findForbiddenConstruct($query);
             if ($forbidden !== null) {
-                $this->logger->error('[occweb] Blocked forbidden construct ({construct}) from {user}: {sql}', [
-                    'app' => 'occweb',
+                $this->logger->error('[extended_occweb] Blocked forbidden construct ({construct}) from {user}: {sql}', [
+                    'app' => 'extended_occweb',
                     'construct' => $forbidden,
                     'user' => $user->getUID(),
                     'sql' => $sql,
@@ -277,8 +277,8 @@ class DbController extends Controller
             $this->db->beginTransaction();
             $transactionStarted = true;
         } catch (\Exception $e) {
-            $this->logger->warning('[occweb] beginTransaction() failed, proceeding without an explicit transaction: {error}', [
-                'app' => 'occweb',
+            $this->logger->warning('[extended_occweb] beginTransaction() failed, proceeding without an explicit transaction: {error}', [
+                'app' => 'extended_occweb',
                 'error' => $e->getMessage(),
             ]);
         }
@@ -353,8 +353,8 @@ class DbController extends Controller
                         // permanently applied — we deliberately do NOT set
                         // rolledBack to true, since that would be untrue.
                         $rollbackFailed = true;
-                        $this->logger->warning('[occweb] rollBack() failed after an error — earlier statements in this batch may already be permanently applied: {error}', [
-                            'app' => 'occweb',
+                        $this->logger->warning('[extended_occweb] rollBack() failed after an error — earlier statements in this batch may already be permanently applied: {error}', [
+                            'app' => 'extended_occweb',
                             'error' => $rollbackError->getMessage(),
                         ]);
                     }
@@ -371,8 +371,8 @@ class DbController extends Controller
                 // a DDL statement on MySQL/MariaDB) — the effects are
                 // already saved, this isn't an error in executing the batch
                 // itself.
-                $this->logger->info('[occweb] commit() had nothing to commit (likely auto-committed by a DDL statement): {error}', [
-                    'app' => 'occweb',
+                $this->logger->info('[extended_occweb] commit() had nothing to commit (likely auto-committed by a DDL statement): {error}', [
+                    'app' => 'extended_occweb',
                     'error' => $e->getMessage(),
                 ]);
             }

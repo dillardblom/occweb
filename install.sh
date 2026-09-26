@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# Post-clone install script for occweb.
+# Post-clone install script for occweb (Nextcloud app id: extended_occweb).
 #
-# Usage (from nextcloud/apps/):
-#   git clone https://github.com/dillardblom/occweb.git
-#   bash occweb/install.sh [nextcloud-root] [web-user]
+# Usage (from nextcloud/apps/) - clone into "extended_occweb", not the repo's
+# own name, since Nextcloud requires the app directory to match its id:
+#   git clone https://github.com/dillardblom/occweb.git extended_occweb
+#   bash extended_occweb/install.sh [nextcloud-root] [web-user]
 #
 # Defaults: nextcloud-root=/var/www/nextcloud, web-user=www-data
 #

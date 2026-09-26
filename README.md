@@ -39,10 +39,13 @@ path and deploy steps differ from the generic instructions below.
 No build step required (plain PHP + vanilla JS). Clone straight into the
 target server's `apps/` directory and run the install script:
 
+Nextcloud requires the app's directory name to match its id (`extended_occweb`), so
+clone into that name explicitly rather than the repo's own name:
+
 ```bash
 cd /var/www/nextcloud/apps
-git clone https://github.com/dillardblom/occweb.git
-bash occweb/install.sh
+git clone https://github.com/dillardblom/occweb.git extended_occweb
+bash extended_occweb/install.sh
 ```
 
 `install.sh` removes the dev/CI-only files that don't belong in a running
@@ -53,7 +56,7 @@ server user, and runs `occ app:enable`. It assumes Nextcloud lives at
 values as arguments if that's not the case:
 
 ```bash
-bash occweb/install.sh /path/to/nextcloud custom-web-user
+bash extended_occweb/install.sh /path/to/nextcloud custom-web-user
 ```
 
 `occ app:enable` takes care of registering the app's version correctly, so
@@ -102,7 +105,7 @@ So if your instance is pretty big, commands like `occ files:scan` will time out 
 
 ## Deploying updates
 
-After pulling/copying new code into `nextcloud/apps/occweb/`, restart PHP so
+After pulling/copying new code into `nextcloud/apps/extended_occweb/`, restart PHP so
 the changes actually take effect. `occ app:disable`/`app:enable` is **not**
 enough — it does not clear PHP's opcode cache, so a stale, cached version of
 the code can keep running (routes silently 404ing is a typical symptom).
@@ -124,7 +127,7 @@ CLI-upgrade wizard, even though nothing about Nextcloud core actually
 changed. After bumping the version, sync it manually:
 
 ```bash
-sudo -u www-data php /var/www/nextcloud/occ config:app:set occweb installed_version --value="X.Y.Z"
+sudo -u www-data php /var/www/nextcloud/occ config:app:set extended_occweb installed_version --value="X.Y.Z"
 ```
 
 (use the same `X.Y.Z` as the new `<version>`), then restart PHP as above.
