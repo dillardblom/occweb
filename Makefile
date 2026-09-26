@@ -150,11 +150,18 @@ VERSION := $(shell xpath -q -e "//info/version/text()" appinfo/info.xml)
 show-version:
 	@echo $(VERSION)
 
+# Defaults to "origin" - correct for a plain clone of this repo, where
+# "origin" is dillardblom/occweb. Override for a checkout where "origin"
+# means something else (e.g. this maintainer's own machine, where the repo
+# was originally forked from upstream and "origin" still points there):
+#   make version RELEASE_REMOTE=fork
+RELEASE_REMOTE ?= origin
+
 .PHONY: version
 version:
 	@echo "Creating version v$(VERSION)"
 	@git tag v$(VERSION)
-	@git push fork v$(VERSION)
+	@git push $(RELEASE_REMOTE) v$(VERSION)
 	@make dist
 	@echo "\nRelease Signature: \n"
 	@make sign
