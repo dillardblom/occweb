@@ -146,6 +146,9 @@ was verified, so a rollback target is obvious if a newer major causes problems.
 | 0.3.4 | `v0.3.4` | 34.0.4 | ❌ Blank terminal - global jQuery gone on NC34 (`jQuery is not defined`), then a 412 "CSRF check failed" on every ajax call once jQuery was vendored. Fixed in 0.3.5. |
 | 0.3.5 | `v0.3.5-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - vendors its own jQuery + sends the CSRF `requesttoken` header explicitly on every ajax call |
 | 0.3.5 | `v0.3.5-nc34` | 33.0.8 | ⚠️ Believed compatible (the 0.3.5 change is additive-only, nothing removed that NC30-33 depended on) but not re-verified - nc01 no longer runs NC33 to test against |
+| 0.4.0 | (untagged) | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - app id renamed `occweb` → `extended_occweb` (App Store prep), no functional changes to the 0.3.5 fixes otherwise |
+| 0.4.1 | `v0.4.1-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - code review fixes: correct jQuery `.fail()` signature, added a missing `.fail()` handler on the initial terminal-load request |
+| 0.4.1 | `v0.4.1-nc34` | 33.0.8 | ⚠️ Same caveat as 0.3.5/0.4.0 - not re-verified, no NC33 test environment available. Also unresolved: `js/jquery.js` now loads unconditionally on every supported version, even NC30-33 where core still provides jQuery - flagged in code review, needs an NC33 environment to confirm it's harmless there. |
 
 If a future major breaks something, `git checkout v0.3.4` is the last version confirmed
 working on NC33 and older.

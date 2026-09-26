@@ -162,7 +162,12 @@ class DbController extends Controller
 
     public function query()
     {
-        // Check admin privileges
+        // Deliberate defense-in-depth (see the equivalent check in
+        // OccController::requireAdmin() for why it's kept even though
+        // Nextcloud's SecurityMiddleware already enforces this by default
+        // absent @NoAdminRequired) - this one is also the direct fix for
+        // this controller having shipped with @PublicPage originally,
+        // which did bypass that default protection entirely.
         $user = $this->userSession->getUser();
         if (!$user) {
             return new JSONResponse(['error' => 'Not authenticated'], 401);

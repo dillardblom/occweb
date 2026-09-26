@@ -387,8 +387,8 @@
             data: JSON.stringify(occCommand)
           }).done(function (response) {
             term.echo('\n' + response).resume();
-          }).fail(function (response, code) {
-            term.echo('\n' + response).resume();
+          }).fail(function (xhr, status) {
+            term.echo('\n[[;#ff5555;]Request failed: ]' + $.terminal.escape_formatting(xhr.status + ' ' + xhr.statusText)).resume();
           });
         }
       }, {
@@ -410,6 +410,16 @@
           scrollToBottom()
         }
       });
+    }).fail(function (xhr, status) {
+      // Without this, a failure here (expired session/CSRF token, network
+      // error, a rejected admin check) leaves #app-content permanently
+      // empty with no visible error and nothing in the console pointing
+      // at the cause - exactly what happened during NC34 testing before
+      // this handler existed.
+      $('#app-content').text(
+        'Failed to load the terminal: ' + xhr.status + ' ' + xhr.statusText +
+        '. Try reloading the page; if that keeps happening, check the server logs.'
+      );
     });
     $('html').keypress(function(){
       scrollToBottom()

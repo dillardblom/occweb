@@ -50,8 +50,17 @@ class OccController extends Controller
 
   private function requireAdmin(): ?JSONResponse
   {
-    // Services via OC::$server zodat de constructor-signatuur ongewijzigd blijft
-    // en NC's DI-container (zonder application.php) de class kan resolven.
+    // Deliberate defense-in-depth, not a workaround for a missing framework
+    // check: Nextcloud's own SecurityMiddleware already rejects non-admins
+    // here by default (no method below has @NoAdminRequired), so this is
+    // redundant today. Kept anyway given what this app can do (arbitrary
+    // occ/SQL execution) - if the framework check ever regresses, this
+    // still holds. If you ever want to intentionally open one of these
+    // routes to non-admins, remove the call below AND add
+    // @NoAdminRequired, or this will keep silently blocking it.
+    //
+    // Services via OC::$server so the constructor signature stays unchanged
+    // and NC's DI container (without an application.php) can resolve the class.
     $userSession = OC::$server->get(\OCP\IUserSession::class);
     $user = $userSession->getUser();
     if ($user === null) {
