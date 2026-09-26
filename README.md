@@ -33,6 +33,9 @@ has background on why Nextcloud has no native async support for occ tasks.
 
 ## Install
 
+Running Nextcloud AIO (Docker)? See [INSTALL-AIO.md](INSTALL-AIO.md) instead — the app
+path and deploy steps differ from the generic instructions below.
+
 No build step required (plain PHP + vanilla JS). Clone straight into the
 target server's `apps/` directory and run the install script:
 
