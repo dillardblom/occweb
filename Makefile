@@ -134,14 +134,14 @@ check-app-name:
 		(echo "app_name is empty - is 'xpath' (libxml2-utils/perl-XML-XPath) installed?" >&2; exit 1)
 
 .PHONY: source
-source: check-app-name
+source: check-app-name check-clean-tree
 	rm -rf $(source_build_directory)
 	mkdir -p $(source_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(source_package_name).tar.gz
 
 # Builds the source package for the app store, ignores php and js tests
 .PHONY: appstore
-appstore: check-app-name
+appstore: check-app-name check-clean-tree
 	rm -rf $(appstore_build_directory)
 	mkdir -p $(appstore_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(appstore_package_name).tar.gz
