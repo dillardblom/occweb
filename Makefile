@@ -134,14 +134,14 @@ check-app-name:
 		(echo "app_name is empty - is 'xpath' (libxml2-utils/perl-XML-XPath) installed?" >&2; exit 1)
 
 .PHONY: source
-source: check-app-name check-clean-tree
+source: check-app-name check-clean-tree check-on-branch
 	rm -rf $(source_build_directory)
 	mkdir -p $(source_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(source_package_name).tar.gz
 
 # Builds the source package for the app store, ignores php and js tests
 .PHONY: appstore
-appstore: check-app-name check-clean-tree
+appstore: check-app-name check-clean-tree check-on-branch
 	rm -rf $(appstore_build_directory)
 	mkdir -p $(appstore_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(appstore_package_name).tar.gz
@@ -178,8 +178,21 @@ check-clean-tree:
 	@git diff --quiet HEAD -- || \
 		(echo "Uncommitted changes to tracked files - commit before releasing (see 'git status')." >&2; exit 1)
 
+# `git archive HEAD` packages whatever commit the checkout currently points
+# to, regardless of branch - check-clean-tree only guards against *uncommitted*
+# changes, not against HEAD being the wrong branch entirely (a feature branch,
+# an old tag, a PR checkout, a detached HEAD). Override for the rare
+# intentional case (e.g. releasing from a branch on purpose):
+#   make appstore RELEASE_BRANCH=some-branch
+RELEASE_BRANCH ?= main
+
+.PHONY: check-on-branch
+check-on-branch:
+	@test "$$(git rev-parse --abbrev-ref HEAD)" = "$(RELEASE_BRANCH)" || \
+		(echo "HEAD is on '$$(git rev-parse --abbrev-ref HEAD)', not '$(RELEASE_BRANCH)' - pass RELEASE_BRANCH=<branch> to override if this is intentional." >&2; exit 1)
+
 .PHONY: version
-version: check-clean-tree
+version: check-clean-tree check-on-branch
 	@echo "Creating version v$(VERSION)"
 	@git tag v$(VERSION)
 	@git push $(RELEASE_REMOTE) v$(VERSION)
