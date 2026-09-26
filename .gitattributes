@@ -1,0 +1,11 @@
+# Files excluded from `git archive` output - used by `make appstore` (and by
+# our own nc01 deploy tarballs) to strip dev/CI-only files that don't belong
+# in a running install, without needing them repeated as tar --exclude flags.
+tests export-ignore
+.travis.yml export-ignore
+phpunit.xml export-ignore
+phpunit.integration.xml export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+Makefile export-ignore
+.gitattributes export-ignore
