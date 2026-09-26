@@ -15,7 +15,12 @@
     <repository>https://github.com/dillardblom/occweb</repository>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
     <dependencies>
-        <nextcloud min-version="30" max-version="35"/>
+        <!-- max-version must equal the highest NC core version this fork has
+             actually been verified on - never a value inherited from upstream
+             or guessed ahead. Test against the next major's beta and bump
+             this BEFORE it goes final, so occ:upgrade never has to fall back
+             to auto-disabling the app. -->
+        <nextcloud min-version="30" max-version="33"/>
     </dependencies>
     <navigations>
         <navigation role="admin">
