@@ -39,7 +39,7 @@
 #        "build": "node node_modules/gulp-cli/bin/gulp.js"
 #    },
 
-app_name=$(notdir $(CURDIR))
+app_name=$(shell xpath -q -e "//info/id/text()" appinfo/info.xml)
 build_tools_directory=$(CURDIR)/build/tools
 source_build_directory=$(CURDIR)/build/artifacts/source
 source_package_name=$(source_build_directory)/$(app_name)
@@ -110,9 +110,21 @@ dist:
 	make source
 	make appstore
 
+# The source/appstore targets below reference ../$(app_name) throughout,
+# inherited from the standard Nextcloud app Makefile template, which
+# assumes CURDIR's own basename equals the app id. That's not true here
+# (this checkout is "occweb", the app id is "extended_occweb"), so make
+# ../$(app_name) resolve to this checkout regardless of what it's actually
+# named, rather than rewriting every exclude pattern below.
+.PHONY: ensure-app-name-symlink
+ensure-app-name-symlink:
+	@if [ "$(notdir $(CURDIR))" != "$(app_name)" ]; then \
+		ln -sfn $(CURDIR) $(CURDIR)/../$(app_name); \
+	fi
+
 # Builds the source package
 .PHONY: source
-source:
+source: ensure-app-name-symlink
 	rm -rf $(source_build_directory)
 	mkdir -p $(source_build_directory)
 	tar \
@@ -126,7 +138,7 @@ source:
 
 # Builds the source package for the app store, ignores php and js tests
 .PHONY: appstore
-appstore:
+appstore: ensure-app-name-symlink
 	rm -rf $(appstore_build_directory)
 	mkdir -p $(appstore_build_directory)
 	tar \
@@ -160,7 +172,7 @@ test: composer
 
 .PHONY: sign
 sign:
-	@openssl dgst -sha512 -sign ~/.nextcloud/certificates/occweb.key build/artifacts/appstore/occweb.tar.gz |openssl base64
+	@openssl dgst -sha512 -sign ~/.nextcloud/certificates/$(app_name).key $(appstore_package_name).tar.gz |openssl base64
 
 VERSION := $(shell xpath -q -e "//info/version/text()" appinfo/info.xml)
 
@@ -172,7 +184,7 @@ show-version:
 version:
 	@echo "Creating version v$(VERSION)"
 	@git tag v$(VERSION)
-	@git push origin v$(VERSION)
+	@git push fork v$(VERSION)
 	@make dist
 	@echo "\nRelease Signature: \n"
 	@make sign

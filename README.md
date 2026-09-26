@@ -150,8 +150,14 @@ was verified, so a rollback target is obvious if a newer major causes problems.
 | 0.4.1 | `v0.4.1-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - code review fixes: correct jQuery `.fail()` signature, added a missing `.fail()` handler on the initial terminal-load request |
 | 0.4.1 | `v0.4.1-nc34` | 33.0.8 | ⚠️ Same caveat as 0.3.5/0.4.0 - not re-verified, no NC33 test environment available. Also unresolved: `js/jquery.js` now loads unconditionally on every supported version, even NC30-33 where core still provides jQuery - flagged in code review, needs an NC33 environment to confirm it's harmless there. |
 
-If a future major breaks something, `git checkout v0.3.4` is the last version confirmed
-working on NC33 and older.
+If a future major breaks something, `v0.3.4` is the last version confirmed working on NC33
+and older - but a plain `git checkout v0.3.4` is **not** a working rollback by itself. That
+tag predates the app id rename (it still declares `<id>occweb</id>`), so checking it out
+into an `extended_occweb`-named install just produces a broken id/directory mismatch. A
+real rollback means disabling/removing `extended_occweb` and deploying `v0.3.4` fresh under
+an `occweb`-named directory instead, same as the original install steps above. This is one
+of the items still deferred to when a proper test instance exists (see the code review
+notes in git history around 0.4.1) - not yet written up in full.
 
 ## TODOs:
 See [open issues](https://github.com/dillardblom/occweb/issues)

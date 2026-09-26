@@ -20,7 +20,7 @@ The AIO container has no working git access to GitHub, so deploy a tarball inste
 ```bash
 # 1. On your machine: clean checkout of the branch/tag you want, dev files stripped
 STAGE=$(mktemp -d)
-git archive main | tar -x -C "$STAGE"
+git archive HEAD | tar -x -C "$STAGE"
 rm -rf "$STAGE"/{tests,.travis.yml,phpunit.xml,phpunit.integration.xml,composer.json,composer.lock,Makefile}
 tar -C "$STAGE" -cf /tmp/occweb-deploy.tar .
 
