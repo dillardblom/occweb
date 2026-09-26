@@ -122,15 +122,26 @@ dist:
 # flags repeated per target. That also means source and appstore now
 # produce the same archive; both targets are kept for compatibility with
 # anything that invokes one of them by name.
+#
+# app_name comes from `xpath` (see its definition above) - if that binary
+# is missing, $(shell ...) silently returns an empty string rather than
+# failing the build, which would turn --prefix=$(app_name)/ below into
+# --prefix=/ and produce a broken, unusably-rooted archive with no
+# indication anything went wrong. Fail loudly instead.
+.PHONY: check-app-name
+check-app-name:
+	@test -n "$(app_name)" || \
+		(echo "app_name is empty - is 'xpath' (libxml2-utils/perl-XML-XPath) installed?" >&2; exit 1)
+
 .PHONY: source
-source:
+source: check-app-name
 	rm -rf $(source_build_directory)
 	mkdir -p $(source_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(source_package_name).tar.gz
 
 # Builds the source package for the app store, ignores php and js tests
 .PHONY: appstore
-appstore:
+appstore: check-app-name
 	rm -rf $(appstore_build_directory)
 	mkdir -p $(appstore_build_directory)
 	git archive --format=tar --prefix=$(app_name)/ HEAD | gzip > $(appstore_package_name).tar.gz
@@ -141,7 +152,7 @@ test: composer
 	$(CURDIR)/vendor/phpunit/phpunit/phpunit -c phpunit.integration.xml
 
 .PHONY: sign
-sign:
+sign: check-app-name
 	@openssl dgst -sha512 -sign ~/.nextcloud/certificates/$(app_name).key $(appstore_package_name).tar.gz |openssl base64
 
 VERSION := $(shell xpath -q -e "//info/version/text()" appinfo/info.xml)
