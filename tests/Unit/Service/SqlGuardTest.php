@@ -24,6 +24,11 @@ class SqlGuardTest extends TestCase
             ["SELECT lo_import('/etc/passwd')"],
             ["SELECT dblink_connect('host=x')"],
             ["SELECT * FROM t INTO OUTFILE '/tmp/x'"],
+            ["COPY (SELECT '/*') TO PROGRAM 'sh' --*/"],
+            ["COPY (SELECT '--') TO PROGRAM 'sh'"],
+            ["COPY (SELECT \$\$/*\$\$) TO PROGRAM 'sh' --*/"],
+            ["COPY (SELECT \"/*\") TO PROGRAM 'sh' --*/"],
+            ["COPY (SELECT E'\\'/*') TO PROGRAM 'sh' --*/"],
         ];
     }
 
@@ -69,6 +74,7 @@ class SqlGuardTest extends TestCase
             ["SELECT \$\$DELETE FROM x\$\$"],
             ["SELECT E'it\\'s delete' FROM t"],
             ['VALUES (1)'],
+            ["SELECT '/* not a comment */' AS a, '-- nor this' AS b"],
         ];
     }
 
@@ -106,6 +112,9 @@ class SqlGuardTest extends TestCase
             ["SELECT setval('seq', 1)"],
             ['MERGE INTO t USING s ON true WHEN MATCHED THEN DELETE'],
             ['VACUUM'],
+            ["WITH a AS (SELECT '/*'), b AS (DELETE FROM t RETURNING 1) SELECT '*/'"],
+            ["SELECT '--' AS x FROM t WHERE a IN (SELECT 1) FOR UPDATE"],
+            ["WITH a AS (SELECT \$\$/*\$\$), b AS (DELETE FROM t RETURNING 1) SELECT '*/'"],
             ['', ],
         ];
     }

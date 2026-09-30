@@ -64,50 +64,17 @@ class SqlGuard
         $i = 0;
 
         while ($i < $len) {
-            $ch = $sql[$i];
-            $end = null;
-
-            if ($ch === "'" || $ch === '"') {
-                $backslashEscapes = $ch === "'" && $i > 0 && ($sql[$i - 1] === 'E' || $sql[$i - 1] === 'e')
-                    && ($i === 1 || !preg_match('/[A-Za-z0-9_]/', $sql[$i - 2]));
-                $end = $i + 1;
-                while ($end < $len) {
-                    if ($backslashEscapes && $sql[$end] === '\\') {
-                        $end += 2;
-                        continue;
-                    }
-                    if ($sql[$end] === $ch) {
-                        if ($end + 1 < $len && $sql[$end + 1] === $ch) {
-                            $end += 2;
-                            continue;
-                        }
-                        break;
-                    }
-                    $end++;
-                }
-                $end = min($end + 1, $len);
-            } elseif ($ch === '$' && preg_match('/\G\$([A-Za-z_][A-Za-z0-9_]*)?\$/', $sql, $m, 0, $i)) {
-                $close = strpos($sql, $m[0], $i + strlen($m[0]));
-                $end = $close === false ? $len : $close + strlen($m[0]);
-            } elseif ($ch === '-' && substr($sql, $i, 2) === '--') {
-                $newline = strpos($sql, "\n", $i);
-                $end = $newline === false ? $len : $newline;
-            } elseif ($ch === '/' && substr($sql, $i, 2) === '/*') {
-                $close = strpos($sql, '*/', $i + 2);
-                $end = $close === false ? $len : $close + 2;
-            }
-
+            $end = self::literalEnd($sql, $i) ?? self::commentEnd($sql, $i);
             if ($end !== null) {
                 $current .= substr($sql, $i, $end - $i);
                 $i = $end;
                 continue;
             }
-
-            if ($ch === ';') {
+            if ($sql[$i] === ';') {
                 $statements[] = trim($current);
                 $current = '';
             } else {
-                $current .= $ch;
+                $current .= $sql[$i];
             }
             $i++;
         }
@@ -120,26 +87,105 @@ class SqlGuard
     }
 
     /**
-     * Replaces comments with a space. A comment separates tokens, so
-     * dropping it without a space would glue "TO/ ** /PROGRAM" into one
-     * word and hide it from the patterns above.
+     * Replaces comments with a space, outside of literals only. A comment
+     * separates tokens, so dropping it without a space would glue
+     * "TO/ ** /PROGRAM" into one word; and a comment marker inside a
+     * literal ('/*') must not swallow the code after it.
      */
     public static function removeComments(string $query): string
     {
-        $query = preg_replace('/--[^\n]*/', ' ', $query);
-        return preg_replace('/\/\*[\s\S]*?\*\//', ' ', $query);
+        return self::scan($query, false);
     }
 
     /**
-     * Replaces string literals and quoted identifiers with a placeholder,
-     * so words inside them ('deleted', "update") don't count as keywords.
+     * Also replaces string literals and quoted identifiers with a
+     * placeholder, so words inside them ('deleted', "update") don't count
+     * as keywords.
      */
     public static function removeLiterals(string $query): string
     {
-        $query = preg_replace('/\$([A-Za-z_][A-Za-z0-9_]*|)\$[\s\S]*?\$\1\$/', "''", $query);
-        $query = preg_replace("/[Ee]'(?:[^'\\\\]|\\\\.|'')*'/", "''", $query);
-        $query = preg_replace("/'(?:[^']|'')*'/", "''", $query);
-        return preg_replace('/"(?:[^"]|"")*"/', '""', $query);
+        return self::scan($query, true);
+    }
+
+    private static function scan(string $sql, bool $replaceLiterals): string
+    {
+        $result = '';
+        $len = strlen($sql);
+        $i = 0;
+
+        while ($i < $len) {
+            $end = self::literalEnd($sql, $i);
+            if ($end !== null) {
+                $result .= $replaceLiterals ? ($sql[$i] === '"' ? '""' : "''") : substr($sql, $i, $end - $i);
+                $i = $end;
+                continue;
+            }
+            $end = self::commentEnd($sql, $i);
+            if ($end !== null) {
+                $result .= ' ';
+                $i = $end;
+                continue;
+            }
+            $result .= $sql[$i];
+            $i++;
+        }
+
+        return $result;
+    }
+
+    /**
+     * End offset of the 'string', E'string', "identifier" or $tag$body$tag$
+     * starting at $i, or null if none starts there. An unclosed literal
+     * runs to the end.
+     */
+    private static function literalEnd(string $sql, int $i): ?int
+    {
+        $len = strlen($sql);
+        $ch = $sql[$i];
+
+        if ($ch === "'" || $ch === '"') {
+            $backslashEscapes = $ch === "'" && $i > 0 && ($sql[$i - 1] === 'E' || $sql[$i - 1] === 'e')
+                && ($i === 1 || !preg_match('/[A-Za-z0-9_]/', $sql[$i - 2]));
+            $end = $i + 1;
+            while ($end < $len) {
+                if ($backslashEscapes && $sql[$end] === '\\') {
+                    $end += 2;
+                    continue;
+                }
+                if ($sql[$end] === $ch) {
+                    if ($end + 1 < $len && $sql[$end + 1] === $ch) {
+                        $end += 2;
+                        continue;
+                    }
+                    return $end + 1;
+                }
+                $end++;
+            }
+            return $len;
+        }
+
+        if ($ch === '$' && preg_match('/\G\$([A-Za-z_][A-Za-z0-9_]*)?\$/', $sql, $m, 0, $i)) {
+            $close = strpos($sql, $m[0], $i + strlen($m[0]));
+            return $close === false ? $len : $close + strlen($m[0]);
+        }
+
+        return null;
+    }
+
+    /**
+     * End offset of the -- or block comment starting at $i, or null.
+     */
+    private static function commentEnd(string $sql, int $i): ?int
+    {
+        if (substr($sql, $i, 2) === '--') {
+            $newline = strpos($sql, "\n", $i);
+            return $newline === false ? strlen($sql) : $newline;
+        }
+        if (substr($sql, $i, 2) === '/*') {
+            $close = strpos($sql, '*/', $i + 2);
+            return $close === false ? strlen($sql) : $close + 2;
+        }
+        return null;
     }
 
     /**
