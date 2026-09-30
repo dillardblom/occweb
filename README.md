@@ -1,22 +1,26 @@
-# OCCWeb terminal (maintained fork)
+# Extended OCC Web (occ & SQL terminal)
 
-### A web terminal for admins to launch Nextcloud's occ commands
+### A web terminal for Nextcloud admins to run occ commands and SQL queries
+
+Available in the [Nextcloud App Store](https://apps.nextcloud.com/apps/extended_occweb) as `extended_occweb`.
 
 ![occweb](https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png)
 
-## About this fork
+## History
 
 The original [Adphi/occweb](https://github.com/Adphi/occweb) was marked deprecated by its
-author and is unmaintained. This fork tracks [fanategorius/occweb](https://github.com/fanategorius/occweb),
-which picked up compatibility maintenance where Adphi left off, and adds SQL query mode,
+author and is unmaintained. This project started as a fork of
+[fanategorius/occweb](https://github.com/fanategorius/occweb), which had picked up
+compatibility maintenance where Adphi left off, and tracked it while adding SQL query mode,
 security hardening (admin checks, CSRF/confirmation flows, transactional batches), and PHP
-8.1+ compatibility fixes on top.
+8.1+ compatibility fixes. Since 0.4.3 it is published under its own app id,
+`extended_occweb`, and it is now maintained as an independent project.
 
 ### Credits
 
 - [Adphi/occweb](https://github.com/Adphi/occweb) — original author/project.
-- [fanategorius/occweb](https://github.com/fanategorius/occweb) — the actively maintained
-  fork this repo is based on and tracks.
+- [fanategorius/occweb](https://github.com/fanategorius/occweb) — the maintained fork this
+  project was based on.
 - [Git-Usr123/occweb](https://github.com/Git-Usr123/occweb) — independent fork; the
   `OC::$server->getConfig()` → `OC::$server->get(\OCP\IConfig::class)` fix in
   `OccController.php` was spotted there and backported here.

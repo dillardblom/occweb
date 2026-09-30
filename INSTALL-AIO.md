@@ -84,7 +84,7 @@ ssh <docker-host> "docker exec -u www-data nextcloud-aio-nextcloud php occ app:d
 ## `max-version` policy
 
 See the comment next to `<dependencies>` in `appinfo/info.xml`: it must always equal the
-highest Nextcloud core version this fork has actually been verified against — never a
+highest Nextcloud core version this app has actually been verified against — never a
 value inherited from upstream, and never a guess ahead of what's been tested. Test
 against the next major's beta ahead of time and bump it before that major goes final,
 rather than reacting after the fact.
