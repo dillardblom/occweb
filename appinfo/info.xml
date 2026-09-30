@@ -14,6 +14,7 @@
     <bugs>https://github.com/dillardblom/occweb/issues</bugs>
     <repository>https://github.com/dillardblom/occweb</repository>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
+    <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot-welcome.png</screenshot>
     <dependencies>
         <!-- min-version and max-version must equal the lowest/highest NC core
              versions this fork has actually been verified on (via testbak/,
