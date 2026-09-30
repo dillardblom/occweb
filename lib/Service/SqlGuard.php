@@ -32,8 +32,12 @@ class SqlGuard
         '/\bINTO\s+(OUTFILE|DUMPFILE)\b/i' => 'INTO OUTFILE/DUMPFILE',
     ];
 
-    /** Statements that start with one of these only read, unless WRITES_INSIDE_READ matches. */
-    private const READ_ONLY_START = '/^(SELECT|WITH|SHOW|EXPLAIN|SET|VALUES|TABLE)\b/i';
+    /**
+     * Statements that start with one of these only read, unless
+     * WRITES_INSIDE_READ matches. SQLite's PRAGMA is left out on purpose:
+     * it can also change settings, so it asks for confirmation.
+     */
+    private const READ_ONLY_START = '/^(SELECT|WITH|SHOW|EXPLAIN|DESCRIBE|DESC|SET|VALUES|TABLE)\b/i';
 
     /**
      * What makes a statement that starts as a read change something:

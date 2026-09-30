@@ -74,6 +74,8 @@ class SqlGuardTest extends TestCase
             ["SELECT \$\$DELETE FROM x\$\$"],
             ["SELECT E'it\\'s delete' FROM t"],
             ['VALUES (1)'],
+            ['DESCRIBE oc_users'],
+            ['DESC oc_users'],
             ["SELECT '/* not a comment */' AS a, '-- nor this' AS b"],
         ];
     }
@@ -113,6 +115,7 @@ class SqlGuardTest extends TestCase
             ["SELECT nextval('seq')"],
             ['MERGE INTO t USING s ON true WHEN MATCHED THEN DELETE'],
             ['VACUUM'],
+            ['PRAGMA journal_mode = WAL'],
             ["WITH a AS (SELECT '/*'), b AS (DELETE FROM t RETURNING 1) SELECT '*/'"],
             ["SELECT '--' AS x FROM t WHERE a IN (SELECT 1) FOR UPDATE"],
             ["WITH a AS (SELECT \$\$/*\$\$), b AS (DELETE FROM t RETURNING 1) SELECT '*/'"],
