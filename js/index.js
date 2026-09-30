@@ -19,10 +19,23 @@
     // text (e.g. Symfony's "[alias]" in `occ list`) and leave the ANSI
     // sequences alone, so from_ansi can still turn them into colors. This
     // only works together with unixFormattingEscapeBrackets (see below).
-    function escapeOutputBrackets(output) {
-      return String(output).replace(/(\x1B\[[0-9;]*[A-Za-z])|[\[\]]/g, function (match, ansi) {
-        return ansi ? ansi : (match === '[' ? '&#91;' : '&#93;');
-      });
+    //
+    // Output can contain text from users (display names, file names), so
+    // keep only color codes (SGR) and drop other escape sequences,
+    // backspaces and control characters, which could rewrite or hide text
+    // on screen. A lone CR becomes a newline.
+    function sanitizeOccOutput(output) {
+      return String(output)
+        .replace(/\x1B\][^\x07\x1B]*(\x07|\x1B\\)?/g, '')
+        .replace(/(\x1B\[[0-9;]*m)|\x1B\[[0-?]*[ -\/]*[@-~]|\x1B[@-_]?/g, function (match, sgr) {
+          return sgr || '';
+        })
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F\x7F]/g, '')
+        .replace(/(\x1B\[[0-9;]*m)|[\[\]]/g, function (match, sgr) {
+          return sgr ? sgr : (match === '[' ? '&#91;' : '&#93;');
+        });
     }
 
     // Current terminal mode: 'occ' (regular occ commands) or 'sql'
@@ -74,7 +87,8 @@
 
     // Quick client-side check for DELETE/UPDATE — purely for UX (to avoid
     // an extra round trip to the server). The backend always makes the
-    // final call (requiresConfirmation); this is just a hint.
+    // final call (requiresConfirmation) and also covers every other
+    // statement that changes something; this is just a hint.
     function scriptNeedsConfirmation(sql) {
       return splitStatements(sql).some(function (part) {
         var normalized = part.replace(/^(\s*--[^\n]*\n)*\s*/, '');
@@ -326,7 +340,8 @@
     }
 
     function askDeleteConfirmation(term, sql, message) {
-      var prompt = '[[;#ff5555;]' + (message || 'This script contains DELETE/UPDATE statement(s).') + ' Type "yes" to run it: ]';
+      var text = message || 'This script contains statement(s) that change data or the schema.';
+      var prompt = '[[;#ff5555;]' + $.terminal.escape_brackets(text) + ' Type "yes" to run it: ]';
       term.read(prompt).then(function (answer) {
         if ((answer || '').trim().toLowerCase() === 'yes') {
           sendSqlQuery(term, sql, true);
@@ -397,7 +412,7 @@
             headers: { requesttoken: OC.requestToken },
             data: JSON.stringify(occCommand)
           }).done(function (response) {
-            term.echo('\n' + escapeOutputBrackets(response)).resume();
+            term.echo('\n' + sanitizeOccOutput(response)).resume();
           }).fail(function (xhr, status) {
             term.echo('\n[[;#ff5555;]Request failed: ]' + $.terminal.escape_formatting(xhr.status + ' ' + xhr.statusText)).resume();
           });
@@ -412,6 +427,9 @@
         // The overtyping and from_ansi formatters unescape brackets before
         // parsing; this makes them escape the text again afterwards.
         unixFormattingEscapeBrackets: true,
+        // Output can contain user-controlled text; don't turn URLs in it
+        // into links an admin might click by mistake.
+        convertLinks: false,
         keydown: function (e) {
           // Shift+Enter inserts a newline instead of running the command,
           // letting you type multi-line SQL scripts in sql mode.

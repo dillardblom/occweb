@@ -3,6 +3,7 @@
 namespace OCA\OCCWeb\Controller;
 
 use OC;
+use OCA\OCCWeb\Service\SqlGuard;
 use OCP\AppFramework\Controller;
 use OCP\IRequest;
 use OCP\IDBConnection;
@@ -18,26 +19,6 @@ class DbController extends Controller
 
     /** Maximum size of submitted SQL text in bytes (protection against OOM/DoS). */
     private const MAX_SQL_BYTES = 1048576; // 1 MB
-
-    /**
-     * Constructs that give access to the server's filesystem or allow
-     * launching external programs via SQL. These are blocked entirely,
-     * with no way to confirm past them — unlike DELETE, this isn't
-     * about data loss, it's about potential server takeover.
-     */
-    private const FORBIDDEN_PATTERNS = [
-        '/\bCOPY\b[\s\S]*\bPROGRAM\b/i' => 'COPY ... PROGRAM (runs external commands)',
-        '/\bCOPY\b[\s\S]*\b(FROM|TO)\b\s*\'/i' => "COPY ... FROM/TO 'file' (access to the server's filesystem)",
-        '/\bpg_read_binary_file\s*\(/i' => 'pg_read_binary_file()',
-        '/\bpg_read_file\s*\(/i' => 'pg_read_file()',
-        '/\bpg_ls_dir\s*\(/i' => 'pg_ls_dir()',
-        '/\bpg_stat_file\s*\(/i' => 'pg_stat_file()',
-        '/\blo_import\s*\(/i' => 'lo_import()',
-        '/\blo_export\s*\(/i' => 'lo_export()',
-        '/\bdblink(_connect)?\s*\(/i' => 'dblink() (connects to arbitrary databases)',
-        '/\bLOAD_FILE\s*\(/i' => 'LOAD_FILE()',
-        '/\bINTO\s+(OUTFILE|DUMPFILE)\b/i' => 'INTO OUTFILE/DUMPFILE',
-    ];
 
     private $db;
     private $groupManager;
@@ -58,35 +39,6 @@ class DbController extends Controller
         // Via OC::$server, same as in OccController — we don't add LoggerInterface
         // to the constructor so as not to change the signature resolved by the DI container.
         $this->logger = OC::$server->get(LoggerInterface::class);
-    }
-
-    /**
-     * Strips leading single-line comments ("-- ...") before a query.
-     * After splitting a batch, such a comment can end up stuck to the
-     * next query and interfere with detecting its type (SELECT/SET/DELETE).
-     */
-    private function stripLeadingComments($query)
-    {
-        $query = ltrim($query);
-        while (preg_match('/^--[^\n]*\n/', $query)) {
-            $query = ltrim(preg_replace('/^--[^\n]*\n/', '', $query, 1));
-        }
-        return $query;
-    }
-
-    /**
-     * Strips ALL single-line (-- ...) and block-style C comments from a
-     * query, including ones sitting inside an expression (e.g. between a
-     * function name and its opening parenthesis — otherwise a forbidden
-     * construct could be hidden from findForbiddenConstruct that way).
-     * Used only for checking against forbidden constructs — the query
-     * that actually gets executed is left unmodified.
-     */
-    private function removeAllComments($query)
-    {
-        $query = preg_replace('/--[^\n]*/', '', $query);
-        $query = preg_replace('/\/\*[\s\S]*?\*\//', '', $query);
-        return $query;
     }
 
     /**
@@ -142,24 +94,6 @@ class DbController extends Controller
         }));
     }
 
-    /**
-     * Returns a description of the forbidden construct found (filesystem
-     * access, running programs), or null if the query is safe in that
-     * regard. The comment-stripped version of the query is checked —
-     * otherwise the construct could be hidden by inserting a comment
-     * between the function name and "(".
-     */
-    private function findForbiddenConstruct($query)
-    {
-        $clean = $this->removeAllComments($query);
-        foreach (self::FORBIDDEN_PATTERNS as $pattern => $label) {
-            if (preg_match($pattern, $clean)) {
-                return $label;
-            }
-        }
-        return null;
-    }
-
     public function query()
     {
         // Deliberate defense-in-depth (see the equivalent check in
@@ -210,7 +144,7 @@ class DbController extends Controller
         // blocked entirely — this isn't about data loss (like DELETE), it's
         // about potential server takeover, and confirmation doesn't bypass it.
         foreach ($queries as $query) {
-            $forbidden = $this->findForbiddenConstruct($query);
+            $forbidden = SqlGuard::findForbiddenConstruct($query);
             if ($forbidden !== null) {
                 $this->logger->error('[extended_occweb] Blocked forbidden construct ({construct}) from {user}: {sql}', [
                     'app' => 'extended_occweb',
@@ -225,34 +159,29 @@ class DbController extends Controller
             }
         }
 
-        // DELETE and UPDATE are irreversible (or hard to reverse), so we
-        // require explicit confirmation from the client (confirm=true) before
-        // executing a single query from the batch.
-        $deleteCount = 0;
-        $updateCount = 0;
+        // Anything that isn't a plain read (DELETE, UPDATE, INSERT, DROP,
+        // a data-modifying CTE, ...) needs explicit confirmation from the
+        // client (confirm=true) before a single query of the batch runs.
+        $writeTypes = [];
         foreach ($queries as $query) {
-            $normalized = $this->stripLeadingComments($query);
-            if (stripos($normalized, 'DELETE') === 0) {
-                $deleteCount++;
-            } elseif (stripos($normalized, 'UPDATE') === 0) {
-                $updateCount++;
+            if (!SqlGuard::isReadOnly($query)) {
+                $type = SqlGuard::statementType($query) ?: 'UNKNOWN';
+                $writeTypes[$type] = ($writeTypes[$type] ?? 0) + 1;
             }
         }
 
-        if (($deleteCount > 0 || $updateCount > 0) && !$confirmed) {
+        if ($writeTypes !== [] && !$confirmed) {
             $parts = [];
-            if ($deleteCount > 0) {
-                $parts[] = "{$deleteCount} DELETE";
-            }
-            if ($updateCount > 0) {
-                $parts[] = "{$updateCount} UPDATE";
+            foreach ($writeTypes as $type => $count) {
+                $parts[] = "{$count} {$type}";
             }
             return new JSONResponse([
                 'success' => false,
                 'requiresConfirmation' => true,
-                'deleteCount' => $deleteCount,
-                'updateCount' => $updateCount,
-                'error' => 'Batch contains ' . implode(' and ', $parts) . ' statement(s) and was not executed. Resend with confirm=true to proceed.'
+                'deleteCount' => $writeTypes['DELETE'] ?? 0,
+                'updateCount' => $writeTypes['UPDATE'] ?? 0,
+                'writeCount' => array_sum($writeTypes),
+                'error' => 'Batch contains statement(s) that change data or the schema (' . implode(', ', $parts) . ') and was not executed. Resend with confirm=true to proceed.'
             ]);
         }
 
@@ -289,17 +218,16 @@ class DbController extends Controller
         }
 
         foreach ($queries as $query) {
-            $normalized = $this->stripLeadingComments($query);
-            $isSelect = stripos($normalized, 'SELECT') === 0;
-            $isSet = stripos($normalized, 'SET ') === 0;
-            $isDelete = stripos($normalized, 'DELETE') === 0;
-            $isUpdate = stripos($normalized, 'UPDATE') === 0;
+            $statementType = SqlGuard::statementType($query);
+            $isSet = $statementType === 'SET';
+            $isDelete = $statementType === 'DELETE';
+            $isUpdate = $statementType === 'UPDATE';
 
             try {
                 $stmt = $this->db->prepare($query);
                 $stmt->execute();
 
-                if ($isSelect) {
+                if ($statementType === 'SELECT' || ($statementType === 'WITH' && SqlGuard::isReadOnly($query))) {
                     // Read row by row and stop at MAX_ROWS, instead of
                     // fetchAll() + array_slice — otherwise a SELECT without
                     // LIMIT on a huge table would still pull everything into
