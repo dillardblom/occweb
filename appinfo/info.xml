@@ -26,7 +26,7 @@
 **Limitations**
 
 - Not an interactive terminal: long-running commands (like `files:scan` on a large instance) time out, and commands that ask questions cannot be answered (use `-n`).]]></description>
-    <version>0.4.5</version>
+    <version>0.4.6</version>
     <licence>agpl</licence>
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
     <namespace>OCCWeb</namespace>
@@ -35,11 +35,12 @@
     <bugs>https://github.com/dillardblom/occweb/issues</bugs>
     <repository>https://github.com/dillardblom/occweb</repository>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot.png</screenshot>
-    <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot-sql.png</screenshot>
     <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot-status.png</screenshot>
+    <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot-sql-switch.png</screenshot>
+    <screenshot>https://github.com/dillardblom/occweb/raw/main/appinfo/screenshot-sql.png</screenshot>
     <dependencies>
         <!-- min-version and max-version must equal the lowest/highest NC core
-             versions this fork has actually been verified on (via testbak/,
+             versions this app has actually been verified on (via testbak/,
              see its README) - never inherited from upstream or guessed at
              either end. min-version was 30 pre-testbak, unverified since the
              app-id rename/jQuery fixes - narrowed to 32 (2026-09-27) once 30/31

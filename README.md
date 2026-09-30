@@ -182,6 +182,7 @@ was verified, so a rollback target is obvious if a newer major causes problems.
 | 0.4.3 | `v0.4.3` | 32.0.15, 33.0.9, 34.0.4, 35.0.1 | ✅ Verified (`testbak/`, 2026-09-27). First release under `extended_occweb`: NC35 fatal in `OccOutput` fixed, vendored jQuery only loaded on NC34+. |
 | 0.4.4 | (untagged) | 34.0.4 | ✅ Verified (2026-09-30). Brackets in occ output escaped before rendering. |
 | 0.4.5 | `v0.4.5` | 32.0.15, 33.0.9, 34.0.4, 35.0.1 | ✅ Verified (`testbak/`, 2026-09-30). SQL mode hardening, occ output sanitized, first release code-signed with the Nextcloud certificate. |
+| 0.4.6 | `v0.4.6` | 32.0.15, 33.0.9, 34.0.4, 35.0.1 | ✅ Verified (`testbak/`, 2026-09-30). occ commands logged for the audit trail, console built from the container, more SQL guard gaps closed, long values in result tables cut to fit (`--full` shows them). |
 
 Older entries (0.3.5-0.4.2) are in the git history of this file.
 
