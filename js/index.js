@@ -17,7 +17,8 @@
     // occ output is plain text with ANSI colors, but jQuery Terminal reads
     // "[" and "]" as its own formatting syntax. Escape the brackets in the
     // text (e.g. Symfony's "[alias]" in `occ list`) and leave the ANSI
-    // sequences alone, so from_ansi can still turn them into colors.
+    // sequences alone, so from_ansi can still turn them into colors. This
+    // only works together with unixFormattingEscapeBrackets (see below).
     function escapeOutputBrackets(output) {
       return String(output).replace(/(\x1B\[[0-9;]*[A-Za-z])|[\[\]]/g, function (match, ansi) {
         return ansi ? ansi : (match === '[' ? '&#91;' : '&#93;');
@@ -408,6 +409,9 @@
         name: 'occ',
         prompt: OCC_PROMPT,
         completion: response,
+        // The overtyping and from_ansi formatters unescape brackets before
+        // parsing; this makes them escape the text again afterwards.
+        unixFormattingEscapeBrackets: true,
         keydown: function (e) {
           // Shift+Enter inserts a newline instead of running the command,
           // letting you type multi-line SQL scripts in sql mode.
