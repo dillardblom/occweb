@@ -3,8 +3,29 @@
     xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>extended_occweb</id>
     <name>Extended OCC Web</name>
-    <summary>OCC Commands in a web terminal</summary>
-    <description><![CDATA[Run OCC Commands in a web terminal]]></description>
+    <summary>Run occ commands and SQL queries from a web terminal (admins only)</summary>
+    <description><![CDATA[A terminal in the browser for Nextcloud administrators: run occ commands and query the database without shell access to the server. Handy on Nextcloud All-in-One (AIO) and other container setups, where occ otherwise needs `docker exec`.
+
+**occ mode**
+
+- Run any occ command, with tab completion of command names and colored output.
+- Every command is logged with the user who ran it, in the Nextcloud log and, when enabled, in the admin_audit log.
+
+**SQL mode** (type `sql`)
+
+- Run SQL against the Nextcloud database. Statements separated by `;` run as one batch on one connection, and the batch is rolled back if a statement fails.
+- Results are shown as tables (up to 1000 rows per query).
+- Statements that change data or the schema ask for confirmation before the batch runs. Reading or writing files on the database server and starting programs through SQL are blocked.
+- Ready-made scripts: type `templates`, for example to look up or completely delete a local user. A template only fills the command line; nothing runs until you review it and press Enter.
+
+**Security**
+
+- Only members of the Nextcloud admin group can use the app; every request is checked and CSRF-protected.
+- Treat access to it like shell access to the server, and run the database as a user without superuser or server file/program rights. See the Security section in the README.
+
+**Limitations**
+
+- Not an interactive terminal: long-running commands (like `files:scan` on a large instance) time out, and commands that ask questions cannot be answered (use `-n`).]]></description>
     <version>0.4.5</version>
     <licence>agpl</licence>
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
