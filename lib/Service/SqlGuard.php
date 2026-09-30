@@ -27,7 +27,7 @@ class SqlGuard
         '/\bpg_stat_file\s*\(/i' => 'pg_stat_file()',
         '/\blo_import\s*\(/i' => 'lo_import()',
         '/\blo_export\s*\(/i' => 'lo_export()',
-        '/\bdblink(_connect)?\s*\(/i' => 'dblink() (connects to arbitrary databases)',
+        '/\bdblink\w*\s*\(/i' => 'dblink functions (connect to arbitrary databases)',
         '/\bLOAD_FILE\s*\(/i' => 'LOAD_FILE()',
         '/\bINTO\s+(OUTFILE|DUMPFILE)\b/i' => 'INTO OUTFILE/DUMPFILE',
     ];
