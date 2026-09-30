@@ -203,7 +203,10 @@
     }
 
     // Tabular rendering of SELECT results, psql-style.
-    function renderTable(term, rows) {
+    // Unless full is set, the widest columns are narrowed until the table
+    // fits the terminal, so one long value doesn't wrap the whole table.
+    // Returns true when a value was cut.
+    function renderTable(term, rows, full) {
       if (!rows || !rows.length) {
         return;
       }
@@ -234,9 +237,34 @@
         }, col.length);
       });
 
+      var MIN_WIDTH = 10;
+      var cut = false;
+      if (!full) {
+        var available = term.cols() - 1;
+        var total = function () {
+          return widths.reduce(function (sum, w) { return sum + w + 3; }, -1);
+        };
+        while (total() > available) {
+          var widest = widths.indexOf(Math.max.apply(null, widths));
+          if (widths[widest] <= MIN_WIDTH) {
+            break;
+          }
+          widths[widest] = Math.max(MIN_WIDTH, widths[widest] - (total() - available));
+        }
+      }
+
+      function fit(str, width) {
+        str = String(str);
+        if (str.length <= width) {
+          return str;
+        }
+        cut = true;
+        return str.slice(0, width - 1) + '\u2026';
+      }
+
       function formatRow(cells) {
         return cells.map(function (cell, i) {
-          return ' ' + pad(cell, widths[i]) + ' ';
+          return ' ' + pad(fit(cell, widths[i]), widths[i]) + ' ';
         }).join('|');
       }
 
@@ -248,9 +276,10 @@
       });
 
       term.echo($.terminal.escape_formatting(lines.join('\n')));
+      return cut;
     }
 
-    function renderSqlResponse(term, response) {
+    function renderSqlResponse(term, response, full) {
       if (!response) {
         term.echo('[[;#ff5555;]Empty response from server]');
         return;
@@ -270,8 +299,8 @@
           term.echo('[[;#ff5555;]  Error: ]' + $.terminal.escape_formatting(r.error || 'unknown error'));
         } else if (r.type === 'select') {
           term.echo('[[;gray;]  ' + r.count + ' row(s)]');
-          if (r.count > 0) {
-            renderTable(term, r.data);
+          if (r.count > 0 && renderTable(term, r.data, full)) {
+            term.echo('[[;gray;]  Long values are cut to fit the terminal. Add --full to the query to see them in full.]');
           }
           if (r.truncated) {
             term.echo('[[;yellow;]  Result truncated — showing only the first ' + r.count + ' rows, add LIMIT to see more precisely.]');
@@ -327,7 +356,8 @@
           askDeleteConfirmation(term, sql, response.error);
           return;
         }
-        renderSqlResponse(term, response);
+        // "--full" is a plain SQL comment, so the database ignores it
+        renderSqlResponse(term, response, /(^|\s)-- ?full\b/.test(sql));
         term.resume();
       }).fail(function (xhr, status) {
         if (status === 'timeout') {

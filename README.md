@@ -85,6 +85,10 @@ run the whole block in a single request — this matters for scripts like
 statement in one submission runs on the same database connection/session.
 Type `occ` to switch back to the normal occ-command mode.
 
+Long values in result tables are cut to fit the terminal. Add `--full` to the
+query (it is an SQL comment, so the database ignores it) to see them in full,
+e.g. `SELECT configvalue FROM oc_appconfig WHERE configkey = 'x'; --full`.
+
 Every statement that changes data or the schema (`DELETE`, `UPDATE`,
 `INSERT`, `DROP`, a data-modifying `WITH`, ...) asks for confirmation before
 the batch runs. There is still no undo — double check what you are about to
