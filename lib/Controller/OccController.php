@@ -114,7 +114,15 @@ class OccController extends Controller
   public function cmd($command)
   {
     if ($err = $this->requireAdmin()) return $err;
-    $this->logger->debug($command);
+    // The regular log gets only the command name: arguments can hold
+    // secrets (config:system:set --value=...). The full command goes to
+    // admin_audit through the ConsoleEvent, like occ on the CLI.
+    $this->logger->warning('[extended_occweb] occ command by {user}: {command}', [
+      'app' => 'extended_occweb',
+      'user' => $this->userId,
+      'command' => strtok(trim((string) $command), " \t\n") ?: '(empty)',
+    ]);
+    $this->fakeRequest->server['argv'] = ['occ', $command];
     $input = new StringInput($command);
     $response = $this->run($input);
     $this->logger->debug($response);
