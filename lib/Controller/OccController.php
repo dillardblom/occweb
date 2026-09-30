@@ -5,7 +5,6 @@ namespace OCA\OCCWeb\Controller;
 use Exception;
 use OC;
 use OC\Console\Application;
-use OC\MemoryInfo;
 use OCP\IRequest;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Http\DataResponse;
@@ -21,6 +20,7 @@ class OccController extends Controller
   private $userId;
 
   private $application;
+  private $fakeRequest;
   private $symphonyApplication;
   private $output;
 
@@ -30,16 +30,8 @@ class OccController extends Controller
     $this->logger = OC::$server->get(LoggerInterface::class);
     $this->userId = $userId;
 
-    $this->application = new Application(
-      OC::$server->get(\OCP\ServerVersion::class),
-      OC::$server->get(\OCP\IConfig::class),
-      OC::$server->get(\OCP\EventDispatcher\IEventDispatcher::class),
-      new FakeRequest(),
-      $this->logger,
-      OC::$server->query(MemoryInfo::class),
-      OC::$server->get(\OCP\App\IAppManager::class), // Obtain the IAppManager
-      OC::$server->get(\OCP\Defaults::class)
-    );
+    $this->fakeRequest = new FakeRequest();
+    $this->application = $this->createConsoleApplication($this->fakeRequest);
     $this->application->setAutoExit(false);
     $this->output = new OccOutput(OutputInterface::VERBOSITY_NORMAL, true);
     $this->application->loadCommands(new StringInput(""), $this->output);    
@@ -80,6 +72,24 @@ class OccController extends Controller
   {
     if ($err = $this->requireAdmin()) return $err;
     return new TemplateResponse('extended_occweb', 'index');
+  }
+
+  /**
+   * Builds Nextcloud's console application with its dependencies from the
+   * container, except the request: the console reads argv from it for the
+   * ConsoleEvent (used by admin_audit), which a web request doesn't have.
+   * Resolving the arguments by type keeps this working when Nextcloud
+   * changes the constructor, which it has done several times.
+   */
+  private function createConsoleApplication(IRequest $request): Application
+  {
+    $arguments = [];
+    foreach ((new \ReflectionClass(Application::class))->getConstructor()->getParameters() as $parameter) {
+      $type = $parameter->getType();
+      $class = $type instanceof \ReflectionNamedType ? $type->getName() : null;
+      $arguments[] = $class === IRequest::class ? $request : OC::$server->get($class);
+    }
+    return new Application(...$arguments);
   }
 
   /**
