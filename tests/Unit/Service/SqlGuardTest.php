@@ -110,6 +110,7 @@ class SqlGuardTest extends TestCase
             ['SELECT pg_terminate_backend(123)'],
             ["SELECT set_config('x', 'y', false)"],
             ["SELECT setval('seq', 1)"],
+            ["SELECT nextval('seq')"],
             ['MERGE INTO t USING s ON true WHEN MATCHED THEN DELETE'],
             ['VACUUM'],
             ["WITH a AS (SELECT '/*'), b AS (DELETE FROM t RETURNING 1) SELECT '*/'"],

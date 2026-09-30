@@ -174,7 +174,7 @@ class DbController extends Controller
                 $stmt = $this->db->prepare($query);
                 $stmt->execute();
 
-                if ($statementType === 'SELECT' || ($statementType === 'WITH' && SqlGuard::isReadOnly($query))) {
+                if ($statementType === 'SELECT' || ($statementType !== 'SET' && SqlGuard::isReadOnly($query))) {
                     // Read row by row and stop at MAX_ROWS, instead of
                     // fetchAll() + array_slice — otherwise a SELECT without
                     // LIMIT on a huge table would still pull everything into

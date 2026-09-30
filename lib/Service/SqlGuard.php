@@ -46,7 +46,7 @@ class SqlGuard
     private const WRITES_INSIDE_READ = [
         '/\b(INSERT|UPDATE|DELETE|MERGE|INTO|ANALYZE)\b/i',
         '/^SET\s+(SESSION\s+|LOCAL\s+)?(ROLE|SESSION\s+AUTHORIZATION)\b/i',
-        '/\b(pg_terminate_backend|pg_cancel_backend|pg_reload_conf|set_config|setval|lo_create|lo_put|lo_unlink|pg_switch_wal|pg_create_restore_point|pg_advisory_lock)\s*\(/i',
+        '/\b(pg_terminate_backend|pg_cancel_backend|pg_reload_conf|set_config|setval|nextval|lo_create|lo_put|lo_unlink|pg_switch_wal|pg_create_restore_point|pg_advisory_lock)\s*\(/i',
     ];
 
     /**
