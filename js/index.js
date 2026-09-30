@@ -356,8 +356,10 @@
           askDeleteConfirmation(term, sql, response.error);
           return;
         }
-        // "--full" is a plain SQL comment, so the database ignores it
-        renderSqlResponse(term, response, /(^|\s)-- ?full\b/.test(sql));
+        // "--full" is a plain SQL comment, so the database ignores it; string
+        // literals are left out so a value containing it doesn't count
+        var withoutStrings = sql.replace(/'(?:[^']|'')*'/g, "''").replace(/"(?:[^"]|"")*"/g, '""');
+        renderSqlResponse(term, response, /(^|\s)-- ?full\b/.test(withoutStrings));
         term.resume();
       }).fail(function (xhr, status) {
         if (status === 'timeout') {
