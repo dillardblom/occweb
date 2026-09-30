@@ -85,8 +85,36 @@ run the whole block in a single request — this matters for scripts like
 statement in one submission runs on the same database connection/session.
 Type `occ` to switch back to the normal occ-command mode.
 
-⚠️ There is no undo for `DELETE`/`UPDATE` statements — double check what
-you are about to run, ideally against a non-critical row/user first.
+Every statement that changes data or the schema (`DELETE`, `UPDATE`,
+`INSERT`, `DROP`, a data-modifying `WITH`, ...) asks for confirmation before
+the batch runs. There is still no undo — double check what you are about to
+run, ideally against a non-critical row/user first. Statements that access the
+server's filesystem or start programs are blocked.
+
+## Security
+
+OCC Web is a powerful tool: it gives whoever can open it the same control over
+Nextcloud as `occ` on the command line, plus direct access to the database.
+Treat access to it like shell access to the server.
+
+- **Only admins can use it.** Every endpoint checks that the user is a member
+  of the Nextcloud `admin` group, and the endpoints that run commands or SQL
+  also require a valid CSRF token; other users get HTTP 403, anonymous
+  requests HTTP 401. This is the security boundary of the app.
+- **Be careful who you make an admin.** Anyone in the `admin` group can use OCC
+  Web, and an admin can do everything this app does in other ways as well.
+  Deciding who gets admin rights is up to the instance operator, not this app.
+- **Run the database as a scoped user with limited rights.** The SQL mode runs
+  with the rights of Nextcloud's own database user. Make sure that user is not
+  a database superuser and cannot read or write files on the database server
+  or start programs there (on PostgreSQL: no superuser, no
+  `pg_execute_server_program`, `pg_read_server_files` or
+  `pg_write_server_files`). The checks in the SQL mode are an extra layer, not
+  a replacement for this.
+- **No blocklist of occ commands, on purpose.** We don't block commands that
+  show sensitive settings. It would make the app less useful, and an admin
+  can run such commands in a slightly more roundabout way anyway, so it would
+  only give a false sense of security.
 
 ## ⚠️ Warnings ⚠️
 

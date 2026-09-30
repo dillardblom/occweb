@@ -93,3 +93,6 @@ rather than reacting after the fact.
 
 Type `sql` in the OCCWeb terminal to run raw SQL directly against the Nextcloud
 database. Separate statements with `;`, use Shift+Enter for a new line and Enter to run.
+
+Before giving anyone access, read the Security section in the README: only
+admins can use the app, and the database user should have limited rights.
