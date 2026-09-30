@@ -43,13 +43,15 @@ class SqlGuard
      * What makes a statement that starts as a read change something:
      * a data-modifying CTE (WITH x AS (DELETE ...)), SELECT ... INTO,
      * SELECT ... FOR UPDATE, EXPLAIN ANALYZE (runs the statement),
-     * SET ROLE / SET SESSION AUTHORIZATION, and functions with side
+     * SET ROLE / SET SESSION AUTHORIZATION, MySQL's SET PASSWORD /
+     * GLOBAL / PERSIST, and functions with side
      * effects. Statements that don't start as a read always need
      * confirmation, so INSERT, DROP, CREATE etc. don't need to be here.
      */
     private const WRITES_INSIDE_READ = [
         '/\b(INSERT|UPDATE|DELETE|MERGE|INTO|ANALYZE)\b/i',
         '/^SET\s+(SESSION\s+|LOCAL\s+)?(ROLE|SESSION\s+AUTHORIZATION)\b/i',
+        '/^SET\s+(PASSWORD|GLOBAL|PERSIST|PERSIST_ONLY)\b|^SET\s+@@(GLOBAL|PERSIST|PERSIST_ONLY)\./i',
         '/\b(pg_terminate_backend|pg_cancel_backend|pg_reload_conf|set_config|setval|nextval|lo_create|lo_put|lo_unlink|pg_switch_wal|pg_create_restore_point|pg_advisory_lock)\s*\(/i',
     ];
 
