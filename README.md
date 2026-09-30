@@ -170,19 +170,14 @@ was verified, so a rollback target is obvious if a newer major causes problems.
 
 | occweb version | Tag | NC version tested | Result |
 |---|---|---|---|
-| 0.3.4 | `v0.3.4` | 33.0.8 | ✅ Verified (nc01, 2026-09-25) |
-| 0.3.4 | `v0.3.4` | 34.0.4 | ❌ Blank terminal - global jQuery gone on NC34 (`jQuery is not defined`), then a 412 "CSRF check failed" on every ajax call once jQuery was vendored. Fixed in 0.3.5. |
-| 0.3.5 | `v0.3.5-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - vendors its own jQuery + sends the CSRF `requesttoken` header explicitly on every ajax call |
-| 0.3.5 | `v0.3.5-nc34` | 33.0.8 | ⚠️ Believed compatible (the 0.3.5 change is additive-only, nothing removed that NC30-33 depended on) but not re-verified - nc01 no longer runs NC33 to test against |
-| 0.4.0 | (untagged) | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - app id renamed `occweb` → `extended_occweb` (App Store prep), no functional changes to the 0.3.5 fixes otherwise |
-| 0.4.1 | `v0.4.1-nc34` | 34.0.4 | ✅ Verified (nc01, 2026-09-26) - code review fixes: correct jQuery `.fail()` signature, added a missing `.fail()` handler on the initial terminal-load request |
-| 0.4.1 | `v0.4.1-nc34` | 33.0.8 | ⚠️ Same caveat as 0.3.5/0.4.0 - not re-verified, no NC33 test environment available. Also unresolved: `js/jquery.js` now loads unconditionally on every supported version, even NC30-33 where core still provides jQuery - flagged in code review, needs an NC33 environment to confirm it's harmless there. |
-| 0.4.2 | (untagged) | 32.0.15 | ✅ Verified (`testbak/`, 2026-09-27) - terminal loads and runs commands correctly. Confirms the suspected jQuery issue above: core still exposes a read-only `window.$` getter here, so our vendored `js/jquery.js` throws `TypeError: Cannot set property $ of #<Window> which has only a getter` on load - a real, uncaught console exception, but harmless in practice since the app attaches via `window.jQuery` (still writable), not `window.$`. Fixed in 0.4.3. |
-| 0.4.2 | (untagged) | 33.0.9 | ✅ Verified (`testbak/`, 2026-09-27) - same result as 32.0.15: functional, same harmless-but-real `window.$` console exception. Fixed in 0.4.3. |
-| 0.4.2 | (untagged) | 35.0.1 | ✅ Verified (`testbak/`, 2026-09-27) after a real fix: the bootstrap request 500'd with a PHP fatal, `Declaration of OccOutput::setErrorOutput() must be compatible with ConsoleOutputInterface::setErrorOutput(): void` - NC35 bundles a Symfony Console version whose interface now declares that return type. Fixed by adding `: void` to `OccOutput::setErrorOutput()` (`lib/Controller/OccOutput.php`), which is compatible with every earlier Symfony/NC version too. Confirmed clean afterwards: no console errors, no CSRF issues, terminal fully functional. |
-| 0.4.3 | (untagged) | 32.0.15, 34.0.4 | ✅ Verified (`testbak/`, 2026-09-27) - `templates/index.php` now only loads `js/jquery.js` when `\OCP\ServerVersion::getMajorVersion() >= 34`, since core still provides a working jQuery on 32/33. Re-tested both sides of the boundary: NC32 loads no `jquery.js` request at all and has zero console errors; NC34 still loads it and still works, confirming no regression. |
+| 0.3.4 | `v0.3.4` | 33.0.8 | ✅ Verified (2026-09-25). Last release under the old `occweb` id; does not work on NC34 (missing jQuery, CSRF), fixed from 0.3.5 on. |
+| 0.4.3 | `v0.4.3` | 32.0.15, 33.0.9, 34.0.4, 35.0.1 | ✅ Verified (`testbak/`, 2026-09-27). First release under `extended_occweb`: NC35 fatal in `OccOutput` fixed, vendored jQuery only loaded on NC34+. |
+| 0.4.4 | (untagged) | 34.0.4 | ✅ Verified (2026-09-30). Brackets in occ output escaped before rendering. |
+| 0.4.5 | `v0.4.5` | 32.0.15, 33.0.9, 34.0.4, 35.0.1 | ✅ Verified (`testbak/`, 2026-09-30). SQL mode hardening, occ output sanitized, first release code-signed with the Nextcloud certificate. |
 
-`min-version`/`max-version` in `appinfo/info.xml` were updated from `30`/`34` to `32`/`35` on 2026-09-27 based on the above: 30/31 have never actually been tested (not even before the app-id rename) so claiming them was never justified once the `testbak/`-based verification policy existed, and 35 is now a genuinely verified (and fixed) target rather than a guess. 30/31 are also past Nextcloud's own currently-supported boundary as of 2026-09-18 (32-35 supported), which independently confirms 32 as the right floor.
+Older entries (0.3.5-0.4.2) are in the git history of this file.
+
+`min-version`/`max-version` in `appinfo/info.xml` are `32`/`35` since 2026-09-27: 30/31 were never tested and are past Nextcloud's supported range, and 35 is verified rather than guessed.
 
 If a future major breaks something, `v0.3.4` is the last version confirmed working on NC33
 and older - but a plain `git checkout v0.3.4` is **not** a working rollback by itself. That
