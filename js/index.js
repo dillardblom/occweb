@@ -14,6 +14,16 @@
     }
     var baseUrl = OC.generateUrl('/apps/extended_occweb');
 
+    // occ output is plain text with ANSI colors, but jQuery Terminal reads
+    // "[" and "]" as its own formatting syntax. Escape the brackets in the
+    // text (e.g. Symfony's "[alias]" in `occ list`) and leave the ANSI
+    // sequences alone, so from_ansi can still turn them into colors.
+    function escapeOutputBrackets(output) {
+      return String(output).replace(/(\x1B\[[0-9;]*[A-Za-z])|[\[\]]/g, function (match, ansi) {
+        return ansi ? ansi : (match === '[' ? '&#91;' : '&#93;');
+      });
+    }
+
     // Current terminal mode: 'occ' (regular occ commands) or 'sql'
     // (running arbitrary SQL queries via /db/query).
     var mode = 'occ';
@@ -386,7 +396,7 @@
             headers: { requesttoken: OC.requestToken },
             data: JSON.stringify(occCommand)
           }).done(function (response) {
-            term.echo('\n' + response).resume();
+            term.echo('\n' + escapeOutputBrackets(response)).resume();
           }).fail(function (xhr, status) {
             term.echo('\n[[;#ff5555;]Request failed: ]' + $.terminal.escape_formatting(xhr.status + ' ' + xhr.statusText)).resume();
           });
