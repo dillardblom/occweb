@@ -87,8 +87,9 @@ class SqlGuard
 
         $statements[] = trim($current);
 
+        // A trailing comment ("SELECT 1; -- note") is not a statement
         return array_values(array_filter($statements, function ($s) {
-            return $s !== '';
+            return trim(self::removeComments($s)) !== '';
         }));
     }
 

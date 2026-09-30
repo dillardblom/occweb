@@ -167,6 +167,10 @@ class SqlGuardTest extends TestCase
             ["/* it's; here */ SELECT 1; SELECT 2", ["/* it's; here */ SELECT 1", 'SELECT 2']],
             ['SELECT \$1; SELECT 2', ['SELECT \$1', 'SELECT 2']],
             [' ; ;SELECT 1;', ['SELECT 1']],
+            ["SELECT 1; --full", ['SELECT 1']],
+            ["SELECT 1; -- note\nSELECT 2", ['SELECT 1', "-- note\nSELECT 2"]],
+            ["-- only a comment", []],
+            ["SELECT 1; /* note */", ['SELECT 1']],
         ];
     }
 
