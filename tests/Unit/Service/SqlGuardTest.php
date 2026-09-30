@@ -125,4 +125,29 @@ class SqlGuardTest extends TestCase
         $this->assertSame('SELECT', SqlGuard::statementType('(SELECT 1)'));
         $this->assertSame('', SqlGuard::statementType(''));
     }
+
+    public static function splitProvider(): array
+    {
+        return [
+            ['SELECT 1; SELECT 2', ['SELECT 1', 'SELECT 2']],
+            ["SELECT ';'; SELECT 2", ["SELECT ';'", 'SELECT 2']],
+            ["SELECT 'it''s; x'", ["SELECT 'it''s; x'"]],
+            ['SELECT "a;b" FROM t', ['SELECT "a;b" FROM t']],
+            ["SELECT E'it\\'s; x'; SELECT 2", ["SELECT E'it\\'s; x'", 'SELECT 2']],
+            ["DO \$\$BEGIN PERFORM 1; PERFORM 2; END\$\$; SELECT 3", ["DO \$\$BEGIN PERFORM 1; PERFORM 2; END\$\$", 'SELECT 3']],
+            ["SELECT \$f\$a;\$\$;b\$f\$; SELECT 2", ["SELECT \$f\$a;\$\$;b\$f\$", 'SELECT 2']],
+            ["-- don't; split\nSELECT 1; SELECT 2", ["-- don't; split\nSELECT 1", 'SELECT 2']],
+            ["/* it's; here */ SELECT 1; SELECT 2", ["/* it's; here */ SELECT 1", 'SELECT 2']],
+            ['SELECT \$1; SELECT 2', ['SELECT \$1', 'SELECT 2']],
+            [' ; ;SELECT 1;', ['SELECT 1']],
+        ];
+    }
+
+    /**
+     * @dataProvider splitProvider
+     */
+    public function testSplitStatements(string $sql, array $expected): void
+    {
+        $this->assertSame($expected, SqlGuard::splitStatements($sql));
+    }
 }

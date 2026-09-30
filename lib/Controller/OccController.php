@@ -91,7 +91,7 @@ class OccController extends Controller
     try {
       $this->application->run($input, $this->output);
       return $this->output->fetch();
-    } catch (Exception $ex) {
+    } catch (\Throwable $ex) {
       $this->logger->error($ex->getMessage(), ['exception' => $ex]);
       return "error: " . $ex->getMessage();
     }

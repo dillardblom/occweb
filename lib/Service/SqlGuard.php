@@ -50,6 +50,76 @@ class SqlGuard
     ];
 
     /**
+     * Splits a batch on ";" outside of 'strings', "identifiers",
+     * $tag$dollar-quoted bodies$tag$ and comments, so a semicolon in a
+     * DO block or a quote in a comment doesn't break up the split.
+     *
+     * @return string[]
+     */
+    public static function splitStatements(string $sql): array
+    {
+        $statements = [];
+        $current = '';
+        $len = strlen($sql);
+        $i = 0;
+
+        while ($i < $len) {
+            $ch = $sql[$i];
+            $end = null;
+
+            if ($ch === "'" || $ch === '"') {
+                $backslashEscapes = $ch === "'" && $i > 0 && ($sql[$i - 1] === 'E' || $sql[$i - 1] === 'e')
+                    && ($i === 1 || !preg_match('/[A-Za-z0-9_]/', $sql[$i - 2]));
+                $end = $i + 1;
+                while ($end < $len) {
+                    if ($backslashEscapes && $sql[$end] === '\\') {
+                        $end += 2;
+                        continue;
+                    }
+                    if ($sql[$end] === $ch) {
+                        if ($end + 1 < $len && $sql[$end + 1] === $ch) {
+                            $end += 2;
+                            continue;
+                        }
+                        break;
+                    }
+                    $end++;
+                }
+                $end = min($end + 1, $len);
+            } elseif ($ch === '$' && preg_match('/\G\$([A-Za-z_][A-Za-z0-9_]*)?\$/', $sql, $m, 0, $i)) {
+                $close = strpos($sql, $m[0], $i + strlen($m[0]));
+                $end = $close === false ? $len : $close + strlen($m[0]);
+            } elseif ($ch === '-' && substr($sql, $i, 2) === '--') {
+                $newline = strpos($sql, "\n", $i);
+                $end = $newline === false ? $len : $newline;
+            } elseif ($ch === '/' && substr($sql, $i, 2) === '/*') {
+                $close = strpos($sql, '*/', $i + 2);
+                $end = $close === false ? $len : $close + 2;
+            }
+
+            if ($end !== null) {
+                $current .= substr($sql, $i, $end - $i);
+                $i = $end;
+                continue;
+            }
+
+            if ($ch === ';') {
+                $statements[] = trim($current);
+                $current = '';
+            } else {
+                $current .= $ch;
+            }
+            $i++;
+        }
+
+        $statements[] = trim($current);
+
+        return array_values(array_filter($statements, function ($s) {
+            return $s !== '';
+        }));
+    }
+
+    /**
      * Replaces comments with a space. A comment separates tokens, so
      * dropping it without a space would glue "TO/ ** /PROGRAM" into one
      * word and hide it from the patterns above.

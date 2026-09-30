@@ -41,59 +41,6 @@ class DbController extends Controller
         $this->logger = OC::$server->get(LoggerInterface::class);
     }
 
-    /**
-     * Splits a batch of queries on ";" while respecting single and double
-     * quotes (strings and Postgres-escaped identifiers), so that a
-     * semicolon inside a 'string' or "identifier" (including '' / "" as
-     * an escaped quote) doesn't break up the split.
-     */
-    private function splitStatements($sql)
-    {
-        $statements = [];
-        $current = '';
-        $len = strlen($sql);
-        $quoteChar = null;
-
-        for ($i = 0; $i < $len; $i++) {
-            $ch = $sql[$i];
-
-            if ($quoteChar !== null) {
-                if ($ch === $quoteChar) {
-                    if ($i + 1 < $len && $sql[$i + 1] === $quoteChar) {
-                        $current .= $quoteChar . $quoteChar;
-                        $i++;
-                        continue;
-                    }
-                    $quoteChar = null;
-                }
-                $current .= $ch;
-                continue;
-            }
-
-            if ($ch === "'" || $ch === '"') {
-                $quoteChar = $ch;
-                $current .= $ch;
-                continue;
-            }
-
-            if ($ch === ';') {
-                $statements[] = trim($current);
-                $current = '';
-                continue;
-            }
-
-            $current .= $ch;
-        }
-
-        if (trim($current) !== '') {
-            $statements[] = trim($current);
-        }
-
-        return array_values(array_filter($statements, function ($s) {
-            return $s !== '';
-        }));
-    }
-
     public function query()
     {
         // Deliberate defense-in-depth (see the equivalent check in
@@ -138,7 +85,7 @@ class DbController extends Controller
         // All queries run sequentially on the same DB connection (within a
         // single HTTP request), so SET retains its value for
         // current_setting() in the following queries of the same batch.
-        $queries = $this->splitStatements($sql);
+        $queries = SqlGuard::splitStatements($sql);
 
         // Access to the server's filesystem / running programs via SQL is
         // blocked entirely — this isn't about data loss (like DELETE), it's
