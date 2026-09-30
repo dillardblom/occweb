@@ -122,7 +122,14 @@ class SqlGuard
         while ($i < $len) {
             $end = self::literalEnd($sql, $i);
             if ($end !== null) {
-                $result .= $replaceLiterals ? ($sql[$i] === '"' ? '""' : "''") : substr($sql, $i, $end - $i);
+                $literal = substr($sql, $i, $end - $i);
+                if (preg_match('/^"([A-Za-z_][A-Za-z0-9_$]*)"$/', $literal, $m) && preg_match('/\G\s*\(/', $sql, $unused, 0, $end)) {
+                    // A quoted function name ("setval"(...)) calls the same
+                    // function as the bare word, so check it as one
+                    $result .= $m[1];
+                } else {
+                    $result .= $replaceLiterals ? ($sql[$i] === '"' ? '""' : "''") : $literal;
+                }
                 $i = $end;
                 continue;
             }
