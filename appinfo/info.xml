@@ -26,7 +26,7 @@
 **Limitations**
 
 - Not an interactive terminal: long-running commands (like `files:scan` on a large instance) time out, and commands that ask questions cannot be answered (use `-n`).]]></description>
-    <version>0.4.6</version>
+    <version>0.4.7</version>
     <licence>agpl</licence>
     <author mail="dillard.blom@ensembia.com" >Dillard Blom</author>
     <namespace>OCCWeb</namespace>
